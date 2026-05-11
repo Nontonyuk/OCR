@@ -3,11 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Hard Subtitle Extractor</title>
+
+<title>Subtitle OCR Studio</title>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
+
 *{
   margin:0;
   padding:0;
@@ -15,14 +17,14 @@
 }
 
 body{
-  background:#0b1018;
-  color:#fff;
+  background:#0b0f14;
+  color:white;
   font-family:Arial;
   padding:20px;
 }
 
-.wrap{
-  max-width:1000px;
+.container{
+  max-width:1100px;
   margin:auto;
 }
 
@@ -31,35 +33,26 @@ h1{
 }
 
 .upload{
-  padding:20px;
-  border:2px dashed #3b4a5c;
-  border-radius:10px;
-  text-align:center;
   margin-bottom:20px;
 }
 
-button{
-  background:#00d2ff;
-  color:#000;
-  border:none;
-  padding:12px 20px;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:bold;
+input[type=file]{
+  width:100%;
+  padding:14px;
+  border-radius:10px;
+  background:#111923;
+  color:white;
+  border:1px solid #2b3949;
 }
 
-button:hover{
-  opacity:.9;
-}
-
-#videoBox{
+.video-wrap{
   display:none;
 }
 
 .video-stage{
   position:relative;
   width:100%;
-  background:#000;
+  background:black;
   overflow:hidden;
   border-radius:12px;
 }
@@ -69,7 +62,7 @@ video{
   display:block;
 }
 
-#cropWindow{
+#cropBox{
   position:absolute;
   border:3px solid #00d2ff;
   background:rgba(0,210,255,.08);
@@ -92,43 +85,52 @@ video{
 .handle.bottom{
   left:0;
   right:0;
-  height:10px;
+  height:18px;
   cursor:ns-resize;
-}
-
-.handle.top{
-  top:-5px;
-}
-
-.handle.bottom{
-  bottom:-5px;
 }
 
 .handle.left,
 .handle.right{
   top:0;
   bottom:0;
-  width:10px;
+  width:18px;
   cursor:ew-resize;
 }
 
+.handle.top{
+  top:-9px;
+}
+
+.handle.bottom{
+  bottom:-9px;
+}
+
 .handle.left{
-  left:-5px;
+  left:-9px;
 }
 
 .handle.right{
-  right:-5px;
+  right:-9px;
+}
+
+#darkTop,
+#darkBottom,
+#darkLeft,
+#darkRight{
+  position:absolute;
+  background:rgba(0,0,0,.65);
+  pointer-events:none;
 }
 
 #cropLabel{
   position:absolute;
-  top:5px;
+  top:6px;
   left:8px;
-  font-size:12px;
+  background:rgba(0,0,0,.7);
   color:#00d2ff;
-  background:rgba(0,0,0,.6);
-  padding:3px 6px;
-  border-radius:4px;
+  font-size:12px;
+  padding:4px 8px;
+  border-radius:5px;
 }
 
 .controls{
@@ -138,98 +140,88 @@ video{
   flex-wrap:wrap;
 }
 
-.settings{
-  margin-top:15px;
-  display:grid;
-  gap:12px;
-}
-
-select,input{
-  width:100%;
-  padding:10px;
-  background:#131b26;
-  color:#fff;
-  border:1px solid #2b3949;
-  border-radius:8px;
-}
-
-.progress{
-  margin-top:20px;
-  display:none;
-}
-
-.bar{
-  height:8px;
-  background:#222;
-  border-radius:20px;
-  overflow:hidden;
-}
-
-.fill{
-  height:100%;
-  width:0%;
+button{
   background:#00d2ff;
+  color:black;
+  border:none;
+  padding:12px 18px;
+  border-radius:8px;
+  font-weight:bold;
+  cursor:pointer;
 }
 
-#log{
-  margin-top:15px;
+button:hover{
+  opacity:.9;
+}
+
+.preview{
+  margin-top:25px;
   background:#111923;
-  padding:12px;
-  border-radius:10px;
-  height:180px;
-  overflow:auto;
-  font-size:13px;
-  line-height:1.7;
+  border-radius:12px;
+  padding:20px;
 }
 
-.result{
-  display:none;
-  margin-top:20px;
+.preview h2{
+  margin-bottom:15px;
 }
 
-textarea{
-  width:100%;
-  height:250px;
-  background:#111923;
-  color:#fff;
-  border:1px solid #2b3949;
-  border-radius:10px;
-  padding:15px;
+#ocrText{
+  white-space:pre-wrap;
+  line-height:1.8;
+  font-size:18px;
+  color:#00ffae;
 }
 
-.info{
+#status{
   margin-top:10px;
-  color:#9fb1c5;
+  color:#8da2b8;
   font-size:14px;
 }
+
+.crop-info{
+  margin-top:10px;
+  color:#8da2b8;
+}
+
+canvas{
+  display:none;
+}
+
 </style>
 </head>
 <body>
 
-<div class="wrap">
+<div class="container">
 
-<h1>Hard Subtitle Extractor</h1>
+<h1>Subtitle OCR Studio</h1>
 
 <div class="upload">
   <input type="file" id="fileInput" accept="video/*">
 </div>
 
-<div id="videoBox">
+<div class="video-wrap" id="videoWrap">
 
   <div class="video-stage" id="videoStage">
 
     <video id="video" controls></video>
 
-    <div id="cropWindow">
+    <!-- DARK AREAS -->
+    <div id="darkTop"></div>
+    <div id="darkBottom"></div>
+    <div id="darkLeft"></div>
+    <div id="darkRight"></div>
+
+    <!-- CROP -->
+    <div id="cropBox">
 
       <div id="cropLabel">
-        DRAG SUBTITLE AREA
+        SUBTITLE AREA
       </div>
 
-      <div class="handle top" id="handleTop"></div>
-      <div class="handle bottom" id="handleBottom"></div>
-      <div class="handle left" id="handleLeft"></div>
-      <div class="handle right" id="handleRight"></div>
+      <div class="handle top" id="topHandle"></div>
+      <div class="handle bottom" id="bottomHandle"></div>
+      <div class="handle left" id="leftHandle"></div>
+      <div class="handle right" id="rightHandle"></div>
 
       <div id="moveArea"></div>
 
@@ -237,63 +229,39 @@ textarea{
 
   </div>
 
-  <div class="info" id="cropInfo"></div>
-
-  <div class="settings">
-
-    <div>
-      <label>Bahasa OCR</label>
-      <select id="lang">
-        <option value="eng">English</option>
-        <option value="ind">Indonesia</option>
-        <option value="ind+eng" selected>Indonesia + English</option>
-      </select>
-    </div>
-
-    <div>
-      <label>Scan tiap berapa detik</label>
-      <select id="step">
-        <option value="0.3">0.3 detik</option>
-        <option value="0.5" selected>0.5 detik</option>
-        <option value="1">1 detik</option>
-      </select>
-    </div>
-
-    <div>
-      <label>Threshold OCR</label>
-      <input type="range" id="threshold" min="50" max="250" value="160">
-    </div>
-
-  </div>
+  <div class="crop-info" id="cropInfo"></div>
 
   <div class="controls">
-    <button onclick="startOCR()">START OCR</button>
-    <button onclick="autoBottom()">AUTO BOTTOM</button>
+
+    <button onclick="presetBottom()">
+      Bottom
+    </button>
+
+    <button onclick="presetMiddle()">
+      Middle
+    </button>
+
+    <button onclick="presetTop()">
+      Top
+    </button>
+
+    <button onclick="testOCR()">
+      TEST OCR
+    </button>
+
   </div>
 
 </div>
 
-<div class="progress" id="progressBox">
+<div class="preview">
 
-  <div class="bar">
-    <div class="fill" id="fill"></div>
+  <h2>OCR PREVIEW</h2>
+
+  <div id="ocrText">
+    Belum ada OCR...
   </div>
 
-  <div id="status" style="margin-top:10px"></div>
-
-  <div id="log"></div>
-
-</div>
-
-<div class="result" id="result">
-
-  <h2>SRT RESULT</h2>
-
-  <textarea id="srt"></textarea>
-
-  <div class="controls">
-    <button onclick="downloadSRT()">DOWNLOAD SRT</button>
-  </div>
+  <div id="status"></div>
 
 </div>
 
@@ -304,28 +272,28 @@ textarea{
 let cropXPct = 15;
 let cropYPct = 75;
 let cropWPct = 70;
-let cropHPct = 18;
-
-let videoFile = null;
-let srtText = '';
+let cropHPct = 16;
 
 const video = document.getElementById('video');
 
-document.getElementById('fileInput').addEventListener('change', e=>{
+document
+.getElementById('fileInput')
+.addEventListener('change',e=>{
 
   const file = e.target.files[0];
-  if(!file) return;
 
-  videoFile = file;
+  if(!file) return;
 
   video.src = URL.createObjectURL(file);
 
-  document.getElementById('videoBox').style.display='block';
+  document
+  .getElementById('videoWrap')
+  .style.display='block';
 
-  video.onloadedmetadata = ()=>{
+  video.onloadedmetadata=()=>{
 
     renderCrop();
-    initCropDrag();
+    initDrag();
 
   };
 
@@ -333,19 +301,74 @@ document.getElementById('fileInput').addEventListener('change', e=>{
 
 function renderCrop(){
 
-  const stage = document.getElementById('videoStage');
-  const crop = document.getElementById('cropWindow');
+  const stage =
+  document.getElementById('videoStage');
+
+  const crop =
+  document.getElementById('cropBox');
 
   const w = stage.clientWidth;
   const h = stage.clientHeight;
 
-  crop.style.left = (cropXPct/100*w)+'px';
-  crop.style.top = (cropYPct/100*h)+'px';
+  const left =
+  cropXPct/100*w;
 
-  crop.style.width = (cropWPct/100*w)+'px';
-  crop.style.height = (cropHPct/100*h)+'px';
+  const top =
+  cropYPct/100*h;
 
-  document.getElementById('cropInfo').innerHTML =
+  const width =
+  cropWPct/100*w;
+
+  const height =
+  cropHPct/100*h;
+
+  crop.style.left=left+'px';
+  crop.style.top=top+'px';
+
+  crop.style.width=width+'px';
+  crop.style.height=height+'px';
+
+  // DARK AREAS
+
+  const darkTop =
+  document.getElementById('darkTop');
+
+  darkTop.style.left='0px';
+  darkTop.style.top='0px';
+  darkTop.style.width='100%';
+  darkTop.style.height=top+'px';
+
+  const darkBottom =
+  document.getElementById('darkBottom');
+
+  darkBottom.style.left='0px';
+  darkBottom.style.top=(top+height)+'px';
+  darkBottom.style.width='100%';
+  darkBottom.style.height=
+  (h-(top+height))+'px';
+
+  const darkLeft =
+  document.getElementById('darkLeft');
+
+  darkLeft.style.left='0px';
+  darkLeft.style.top=top+'px';
+  darkLeft.style.width=left+'px';
+  darkLeft.style.height=height+'px';
+
+  const darkRight =
+  document.getElementById('darkRight');
+
+  darkRight.style.left=(left+width)+'px';
+  darkRight.style.top=top+'px';
+
+  darkRight.style.width=
+  (w-(left+width))+'px';
+
+  darkRight.style.height=height+'px';
+
+  document
+  .getElementById('cropInfo')
+  .innerHTML=
   `
   X:${cropXPct.toFixed(1)}%
   |
@@ -358,16 +381,28 @@ function renderCrop(){
 
 }
 
-function initCropDrag(){
+function initDrag(){
 
-  const stage = document.getElementById('videoStage');
+  const stage =
+  document.getElementById('videoStage');
 
   const handles = {
-    top: document.getElementById('handleTop'),
-    bottom: document.getElementById('handleBottom'),
-    left: document.getElementById('handleLeft'),
-    right: document.getElementById('handleRight'),
-    move: document.getElementById('moveArea')
+
+    top:
+    document.getElementById('topHandle'),
+
+    bottom:
+    document.getElementById('bottomHandle'),
+
+    left:
+    document.getElementById('leftHandle'),
+
+    right:
+    document.getElementById('rightHandle'),
+
+    move:
+    document.getElementById('moveArea')
+
   };
 
   function bind(el,type){
@@ -379,19 +414,39 @@ function initCropDrag(){
 
       e.preventDefault();
 
-      startX = e.touches?.[0]?.clientX || e.clientX;
-      startY = e.touches?.[0]?.clientY || e.clientY;
+      startX =
+      e.touches?.[0]?.clientX ||
+      e.clientX;
 
-      sx = cropXPct;
-      sy = cropYPct;
-      sw = cropWPct;
-      sh = cropHPct;
+      startY =
+      e.touches?.[0]?.clientY ||
+      e.clientY;
 
-      window.addEventListener('mousemove',move);
-      window.addEventListener('mouseup',up);
+      sx=cropXPct;
+      sy=cropYPct;
+      sw=cropWPct;
+      sh=cropHPct;
 
-      window.addEventListener('touchmove',move,{passive:false});
-      window.addEventListener('touchend',up);
+      window.addEventListener(
+        'mousemove',
+        move
+      );
+
+      window.addEventListener(
+        'mouseup',
+        up
+      );
+
+      window.addEventListener(
+        'touchmove',
+        move,
+        {passive:false}
+      );
+
+      window.addEventListener(
+        'touchend',
+        up
+      );
 
     }
 
@@ -399,40 +454,84 @@ function initCropDrag(){
 
       e.preventDefault();
 
-      const x = e.touches?.[0]?.clientX || e.clientX;
-      const y = e.touches?.[0]?.clientY || e.clientY;
+      const x =
+      e.touches?.[0]?.clientX ||
+      e.clientX;
 
-      const dx = (x-startX)/stage.clientWidth*100;
-      const dy = (y-startY)/stage.clientHeight*100;
+      const y =
+      e.touches?.[0]?.clientY ||
+      e.clientY;
+
+      const dx =
+      (x-startX)/
+      stage.clientWidth*100;
+
+      const dy =
+      (y-startY)/
+      stage.clientHeight*100;
 
       if(type==='move'){
-        cropXPct = sx+dx;
-        cropYPct = sy+dy;
+
+        cropXPct=sx+dx;
+        cropYPct=sy+dy;
+
       }
 
       if(type==='top'){
-        cropYPct = sy+dy;
-        cropHPct = sh-dy;
+
+        cropYPct=sy+dy;
+        cropHPct=sh-dy;
+
       }
 
       if(type==='bottom'){
-        cropHPct = sh+dy;
+
+        cropHPct=sh+dy;
+
       }
 
       if(type==='left'){
-        cropXPct = sx+dx;
-        cropWPct = sw-dx;
+
+        cropXPct=sx+dx;
+        cropWPct=sw-dx;
+
       }
 
       if(type==='right'){
-        cropWPct = sw+dx;
+
+        cropWPct=sw+dx;
+
       }
 
-      cropXPct = Math.max(0,Math.min(95,cropXPct));
-      cropYPct = Math.max(0,Math.min(95,cropYPct));
+      cropXPct=
+      Math.max(
+        0,
+        Math.min(95,cropXPct)
+      );
 
-      cropWPct = Math.max(5,Math.min(100-cropXPct,cropWPct));
-      cropHPct = Math.max(5,Math.min(100-cropYPct,cropHPct));
+      cropYPct=
+      Math.max(
+        0,
+        Math.min(95,cropYPct)
+      );
+
+      cropWPct=
+      Math.max(
+        5,
+        Math.min(
+          100-cropXPct,
+          cropWPct
+        )
+      );
+
+      cropHPct=
+      Math.max(
+        5,
+        Math.min(
+          100-cropYPct,
+          cropHPct
+        )
+      );
 
       renderCrop();
 
@@ -440,16 +539,38 @@ function initCropDrag(){
 
     function up(){
 
-      window.removeEventListener('mousemove',move);
-      window.removeEventListener('mouseup',up);
+      window.removeEventListener(
+        'mousemove',
+        move
+      );
 
-      window.removeEventListener('touchmove',move);
-      window.removeEventListener('touchend',up);
+      window.removeEventListener(
+        'mouseup',
+        up
+      );
+
+      window.removeEventListener(
+        'touchmove',
+        move
+      );
+
+      window.removeEventListener(
+        'touchend',
+        up
+      );
 
     }
 
-    el.addEventListener('mousedown',down);
-    el.addEventListener('touchstart',down,{passive:false});
+    el.addEventListener(
+      'mousedown',
+      down
+    );
+
+    el.addEventListener(
+      'touchstart',
+      down,
+      {passive:false}
+    );
 
   }
 
@@ -461,20 +582,109 @@ function initCropDrag(){
 
 }
 
-function autoBottom(){
+function presetBottom(){
 
-  cropXPct = 15;
-  cropYPct = 75;
-  cropWPct = 70;
-  cropHPct = 18;
+  cropXPct=15;
+  cropYPct=78;
+  cropWPct=70;
+  cropHPct=14;
 
   renderCrop();
 
 }
 
-function preprocess(ctx,w,h,thr){
+function presetMiddle(){
 
-  const img = ctx.getImageData(0,0,w,h);
+  cropXPct=15;
+  cropYPct=42;
+  cropWPct=70;
+  cropHPct=16;
+
+  renderCrop();
+
+}
+
+function presetTop(){
+
+  cropXPct=15;
+  cropYPct=8;
+  cropWPct=70;
+  cropHPct=14;
+
+  renderCrop();
+
+}
+
+async function testOCR(){
+
+  if(!video.videoWidth) return;
+
+  const status =
+  document.getElementById('status');
+
+  const ocrText =
+  document.getElementById('ocrText');
+
+  status.innerHTML='Preparing OCR...';
+
+  const canvas =
+  document.createElement('canvas');
+
+  canvas.width=video.videoWidth;
+  canvas.height=video.videoHeight;
+
+  const ctx =
+  canvas.getContext(
+    '2d',
+    {willReadFrequently:true}
+  );
+
+  ctx.drawImage(video,0,0);
+
+  const vW = video.videoWidth;
+  const vH = video.videoHeight;
+
+  const cX =
+  Math.floor(cropXPct/100*vW);
+
+  const cY =
+  Math.floor(cropYPct/100*vH);
+
+  const cW =
+  Math.floor(cropWPct/100*vW);
+
+  const cH =
+  Math.floor(cropHPct/100*vH);
+
+  const crop =
+  document.createElement('canvas');
+
+  crop.width=cW;
+  crop.height=cH;
+
+  const cc =
+  crop.getContext(
+    '2d',
+    {willReadFrequently:true}
+  );
+
+  cc.filter='grayscale(1) contrast(2)';
+
+  cc.drawImage(
+    canvas,
+    cX,
+    cY,
+    cW,
+    cH,
+    0,
+    0,
+    cW,
+    cH
+  );
+
+  const img =
+  cc.getImageData(0,0,cW,cH);
+
   const px = img.data;
 
   for(let i=0;i<px.length;i+=4){
@@ -484,18 +694,14 @@ function preprocess(ctx,w,h,thr){
     const b = px[i+2];
 
     const bright =
-      0.299*r +
-      0.587*g +
+      0.299*r+
+      0.587*g+
       0.114*b;
 
-    const edge =
-      Math.abs(r-g)+
-      Math.abs(g-b);
+    let val=0;
 
-    let val = 0;
-
-    if(bright > thr || (edge < 20 && bright > 120)){
-      val = 255;
+    if(bright>180){
+      val=255;
     }
 
     px[i]=val;
@@ -504,234 +710,53 @@ function preprocess(ctx,w,h,thr){
 
   }
 
-  ctx.putImageData(img,0,0);
+  cc.putImageData(img,0,0);
 
-}
+  const big =
+  document.createElement('canvas');
 
-function normalizeText(t){
+  big.width=cW*3;
+  big.height=cH*3;
 
-  return t
-  .toLowerCase()
-  .replace(/\s+/g,' ')
-  .replace(/[^\w\s]/g,'')
-  .trim();
-
-}
-
-function formatTime(sec){
-
-  const h = Math.floor(sec/3600);
-  const m = Math.floor((sec%3600)/60);
-  const s = Math.floor(sec%60);
-  const ms = Math.floor((sec-Math.floor(sec))*1000);
-
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
-
-}
-
-function log(msg){
-
-  const div = document.createElement('div');
-  div.textContent = msg;
-
-  const logBox = document.getElementById('log');
-
-  logBox.appendChild(div);
-
-  logBox.scrollTop = logBox.scrollHeight;
-
-}
-
-async function startOCR(){
-
-  if(!videoFile) return;
-
-  document.getElementById('progressBox').style.display='block';
-
-  log('Loading OCR engine...');
-
-  const worker = await Tesseract.createWorker(
-    document.getElementById('lang').value
+  big
+  .getContext('2d')
+  .drawImage(
+    crop,
+    0,
+    0,
+    big.width,
+    big.height
   );
 
+  status.innerHTML='Running OCR...';
+
+  const worker =
+  await Tesseract.createWorker('ind+eng');
+
   await worker.setParameters({
-    tessedit_pageseg_mode: '6'
+
+    tessedit_pageseg_mode:'6',
+
+    preserve_interword_spaces:'1',
+
+    tessedit_char_whitelist:
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,?!:;\'"()- '
+
   });
 
-  log('OCR Ready');
-
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d',{willReadFrequently:true});
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-  const vW = video.videoWidth;
-  const vH = video.videoHeight;
-
-  const cX = Math.floor(cropXPct/100*vW);
-  const cY = Math.floor(cropYPct/100*vH);
-
-  const cW = Math.floor(cropWPct/100*vW);
-  const cH = Math.floor(cropHPct/100*vH);
-
-  const step = parseFloat(document.getElementById('step').value);
-
-  const threshold = parseInt(document.getElementById('threshold').value);
-
-  const duration = video.duration;
-
-  let current = 0;
-
-  let lastText = '';
-  let lastNorm = '';
-
-  let subStart = 0;
-
-  let subs = [];
-
-  while(current < duration){
-
-    video.currentTime = current;
-
-    await new Promise(r=>video.onseeked=r);
-
-    ctx.drawImage(video,0,0);
-
-    const crop = document.createElement('canvas');
-    crop.width = cW;
-    crop.height = cH;
-
-    const cc = crop.getContext('2d',{willReadFrequently:true});
-
-    cc.filter='grayscale(1) contrast(2)';
-
-    cc.drawImage(
-      canvas,
-      cX,
-      cY,
-      cW,
-      cH,
-      0,
-      0,
-      cW,
-      cH
-    );
-
-    preprocess(cc,cW,cH,threshold);
-
-    const big = document.createElement('canvas');
-
-    big.width = cW*2;
-    big.height = cH*2;
-
-    big.getContext('2d').drawImage(
-      crop,
-      0,
-      0,
-      big.width,
-      big.height
-    );
-
-    const result = await worker.recognize(big);
-
-    const text = result.data.text.trim();
-
-    const norm = normalizeText(text);
-
-    log(`[${current.toFixed(1)}s] ${text}`);
-
-    if(norm && norm !== lastNorm){
-
-      if(lastText){
-
-        subs.push({
-          start:subStart,
-          end:current,
-          text:lastText
-        });
-
-      }
-
-      lastText = text;
-      lastNorm = norm;
-      subStart = current;
-
-    }
-
-    if(!norm && lastText){
-
-      subs.push({
-        start:subStart,
-        end:current,
-        text:lastText
-      });
-
-      lastText = '';
-      lastNorm = '';
-
-    }
-
-    current += step;
-
-    const pct = Math.floor(current/duration*100);
-
-    document.getElementById('fill').style.width=pct+'%';
-
-    document.getElementById('status').textContent =
-    pct+'%';
-
-    await new Promise(r=>setTimeout(r,30));
-
-  }
-
-  if(lastText){
-
-    subs.push({
-      start:subStart,
-      end:duration,
-      text:lastText
-    });
-
-  }
+  const result =
+  await worker.recognize(big);
 
   await worker.terminate();
 
-  srtText = '';
+  ocrText.innerHTML=
+  result.data.text || '(tidak ada teks)';
 
-  subs.forEach((s,i)=>{
-
-    srtText +=
-`${i+1}
-${formatTime(s.start)} --> ${formatTime(s.end)}
-${s.text}
-
-`;
-
-  });
-
-  document.getElementById('srt').value = srtText;
-
-  document.getElementById('result').style.display='block';
-
-  log('DONE');
-
-}
-
-function downloadSRT(){
-
-  const blob = new Blob(
-    [srtText],
-    {type:'text/plain'}
-  );
-
-  const a = document.createElement('a');
-
-  a.href = URL.createObjectURL(blob);
-
-  a.download = 'subtitle.srt';
-
-  a.click();
+  status.innerHTML=
+  `
+  OCR Confidence:
+  ${Math.round(result.data.confidence)}%
+  `;
 
 }
 
