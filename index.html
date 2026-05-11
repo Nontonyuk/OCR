@@ -2,12 +2,19 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Movie Subtitle OCR Studio</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<title>Movie Subtitle Extractor</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<script async src="https://docs.opencv.org/4.x/opencv.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
+
 *{
   margin:0;
   padding:0;
@@ -17,8 +24,8 @@
 body{
   background:#070b12;
   color:white;
-  font-family:Arial,Helvetica,sans-serif;
-  padding:20px;
+  font-family:'Inter',sans-serif;
+  padding:18px;
 }
 
 .container{
@@ -27,25 +34,32 @@ body{
 }
 
 h1{
+  font-size:32px;
+  margin-bottom:10px;
+  font-weight:800;
+}
+
+.desc{
+  color:#9cb0c5;
+  line-height:1.7;
   margin-bottom:20px;
-  font-size:40px;
 }
 
 .card{
-  background:#111923;
-  border:1px solid #233244;
+  background:#101720;
+  border:1px solid #223242;
   border-radius:18px;
-  padding:20px;
+  padding:18px;
   margin-bottom:20px;
 }
 
 input[type=file]{
   width:100%;
   padding:16px;
-  background:#0b1118;
-  border:1px solid #233244;
-  color:white;
   border-radius:12px;
+  border:none;
+  background:#091018;
+  color:white;
 }
 
 .video-wrap{
@@ -55,7 +69,7 @@ input[type=file]{
 .video-stage{
   position:relative;
   overflow:hidden;
-  border-radius:16px;
+  border-radius:14px;
   background:black;
 }
 
@@ -64,21 +78,27 @@ video{
   display:block;
 }
 
+.dark{
+  position:absolute;
+  background:rgba(0,0,0,.75);
+  pointer-events:none;
+}
+
 #cropBox{
   position:absolute;
   border:3px solid #00d2ff;
   background:rgba(0,210,255,.12);
-  z-index:10;
+  z-index:5;
 }
 
 #cropLabel{
   position:absolute;
   top:6px;
   left:6px;
-  background:rgba(0,0,0,.8);
+  background:black;
   color:#00d2ff;
-  padding:5px 8px;
-  font-size:12px;
+  font-size:11px;
+  padding:4px 7px;
   border-radius:6px;
 }
 
@@ -91,7 +111,6 @@ video{
 .handle{
   position:absolute;
   background:#00d2ff;
-  z-index:20;
 }
 
 .handle.top,
@@ -110,15 +129,20 @@ video{
   cursor:ew-resize;
 }
 
-.handle.top{top:-11px;}
-.handle.bottom{bottom:-11px;}
-.handle.left{left:-11px;}
-.handle.right{right:-11px;}
+.handle.top{
+  top:-11px;
+}
 
-.dark{
-  position:absolute;
-  background:rgba(0,0,0,.72);
-  pointer-events:none;
+.handle.bottom{
+  bottom:-11px;
+}
+
+.handle.left{
+  left:-11px;
+}
+
+.handle.right{
+  right:-11px;
 }
 
 .controls{
@@ -129,12 +153,12 @@ video{
 }
 
 button{
+  border:none;
   background:#00d2ff;
   color:black;
-  border:none;
   padding:14px 18px;
   border-radius:12px;
-  font-weight:bold;
+  font-weight:700;
   cursor:pointer;
 }
 
@@ -144,41 +168,47 @@ button:hover{
 
 .info{
   margin-top:12px;
-  color:#8ea5bb;
+  color:#90a5b9;
   line-height:1.8;
+  font-size:14px;
 }
 
 #ocrPreview{
-  min-height:120px;
-  font-size:22px;
-  line-height:1.8;
   color:#00ff9d;
+  line-height:1.8;
   white-space:pre-wrap;
+  font-size:20px;
+  min-height:80px;
 }
 
 #status{
-  margin-top:15px;
-  color:#8ea5bb;
+  margin-top:12px;
+  color:#9cb0c5;
+  font-size:14px;
 }
 
-.setting-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-  gap:14px;
-}
-
-select,
-input[type=range]{
+#cleanCanvas{
   width:100%;
-  margin-top:8px;
+  background:black;
+  border-radius:12px;
 }
 
-label{
-  color:#9db3c7;
+textarea{
+  width:100%;
+  height:250px;
+  background:#091018;
+  border:1px solid #223242;
+  border-radius:12px;
+  padding:15px;
+  color:#00ff9d;
+  line-height:1.7;
+  margin-top:15px;
 }
 
-canvas{
-  display:none;
+progress{
+  width:100%;
+  height:20px;
+  margin-top:15px;
 }
 
 </style>
@@ -187,96 +217,123 @@ canvas{
 
 <div class="container">
 
-<h1>Movie Subtitle OCR Studio</h1>
+<h1>Movie Subtitle Extractor</h1>
+
+<div class="desc">
+Ekstrak hard subtitle film menjadi file .srt langsung dari browser.
+</div>
 
 <div class="card">
-  <input type="file" id="fileInput" accept="video/*">
+
+<input type="file" id="fileInput" accept="video/*">
+
 </div>
 
 <div class="video-wrap" id="videoWrap">
 
-  <div class="card">
+<div class="card">
 
-    <div class="video-stage" id="videoStage">
+<div class="video-stage" id="videoStage">
 
-      <video id="video" controls playsinline></video>
+<video id="video" controls playsinline></video>
 
-      <div class="dark" id="darkTop"></div>
-      <div class="dark" id="darkBottom"></div>
-      <div class="dark" id="darkLeft"></div>
-      <div class="dark" id="darkRight"></div>
+<div class="dark" id="darkTop"></div>
+<div class="dark" id="darkBottom"></div>
+<div class="dark" id="darkLeft"></div>
+<div class="dark" id="darkRight"></div>
 
-      <div id="cropBox">
+<div id="cropBox">
 
-        <div id="cropLabel">
-          SUBTITLE AREA
-        </div>
+<div id="cropLabel">
+SUBTITLE AREA
+</div>
 
-        <div class="handle top" id="topHandle"></div>
-        <div class="handle bottom" id="bottomHandle"></div>
-        <div class="handle left" id="leftHandle"></div>
-        <div class="handle right" id="rightHandle"></div>
+<div class="handle top" id="topHandle"></div>
+<div class="handle bottom" id="bottomHandle"></div>
+<div class="handle left" id="leftHandle"></div>
+<div class="handle right" id="rightHandle"></div>
 
-        <div id="moveArea"></div>
+<div id="moveArea"></div>
 
-      </div>
+</div>
 
-    </div>
+</div>
 
-    <div class="info" id="cropInfo"></div>
+<div class="info" id="cropInfo"></div>
 
-    <div class="controls">
-      <button onclick="presetBottom()">Bottom</button>
-      <button onclick="presetMiddle()">Middle</button>
-      <button onclick="presetTop()">Top</button>
-      <button onclick="testOCR()">TEST OCR</button>
-    </div>
+<div class="controls">
 
-  </div>
+<button onclick="presetBottom()">
+Bottom
+</button>
 
-  <div class="card">
+<button onclick="presetMiddle()">
+Middle
+</button>
 
-    <div class="setting-grid">
+<button onclick="presetTop()">
+Top
+</button>
 
-      <div>
-        <label>OCR Mode</label>
-        <select id="ocrMode">
-          <option value="movie">Movie Subtitle</option>
-          <option value="anime">Anime Subtitle</option>
-        </select>
-      </div>
+<button onclick="testOCR()">
+TEST OCR
+</button>
 
-      <div>
-        <label>OCR Threshold</label>
-        <input type="range" id="threshold" min="120" max="240" value="200">
-      </div>
+<button onclick="startSubtitleScan()">
+START SCAN
+</button>
 
-      <div>
-        <label>OCR Language</label>
-        <select id="ocrLang">
-          <option value="ind+eng">Indonesia + English</option>
-          <option value="ind">Indonesia</option>
-          <option value="eng">English</option>
-        </select>
-      </div>
+</div>
 
-    </div>
-
-  </div>
+</div>
 
 </div>
 
 <div class="card">
 
-  <h2 style="margin-bottom:20px">
-    OCR PREVIEW
-  </h2>
+<h2 style="margin-bottom:15px">
+Clean Subtitle
+</h2>
 
-  <div id="ocrPreview">
-    Belum ada OCR...
-  </div>
+<canvas id="cleanCanvas"></canvas>
 
-  <div id="status"></div>
+</div>
+
+<div class="card">
+
+<h2 style="margin-bottom:15px">
+OCR Preview
+</h2>
+
+<div id="ocrPreview">
+Belum ada OCR...
+</div>
+
+<div id="status"></div>
+
+<progress
+id="scanProgress"
+max="100"
+value="0">
+</progress>
+
+</div>
+
+<div class="card">
+
+<h2 style="margin-bottom:15px">
+SRT Result
+</h2>
+
+<textarea id="srtPreview"></textarea>
+
+<div class="controls">
+
+<button onclick="downloadSRT()">
+DOWNLOAD SRT
+</button>
+
+</div>
 
 </div>
 
@@ -289,27 +346,42 @@ let cropYPct = 76;
 let cropWPct = 70;
 let cropHPct = 14;
 
-const video = document.getElementById('video');
+let subtitles = [];
 
-// =========================
-// FILE LOAD
-// =========================
+let prevSubtitleFrame = null;
+
+let currentSubtitle = '';
+
+let subtitleStart = 0;
+
+let subtitleHoldTime = 0;
+
+const HOLD_DURATION = 1.0;
+
+const MIN_SUB_DURATION = 1.2;
+
+let scanStep = 0.8;
+
+const video =
+document.getElementById('video');
 
 document
 .getElementById('fileInput')
 .addEventListener('change',e=>{
 
-  const file = e.target.files[0];
+  const file =
+  e.target.files[0];
 
   if(!file) return;
 
-  video.src = URL.createObjectURL(file);
+  video.src =
+  URL.createObjectURL(file);
 
   document
   .getElementById('videoWrap')
   .style.display='block';
 
-  video.onloadedmetadata = ()=>{
+  video.onloadedmetadata=()=>{
 
     renderCrop();
     initCropDrag();
@@ -317,10 +389,6 @@ document
   };
 
 });
-
-// =========================
-// RENDER CROP
-// =========================
 
 function renderCrop(){
 
@@ -330,56 +398,64 @@ function renderCrop(){
   const crop =
   document.getElementById('cropBox');
 
-  const w = stage.clientWidth;
-  const h = stage.clientHeight;
+  const w =
+  stage.clientWidth;
 
-  const left = cropXPct/100*w;
-  const top = cropYPct/100*h;
-  const width = cropWPct/100*w;
-  const height = cropHPct/100*h;
+  const h =
+  stage.clientHeight;
 
-  crop.style.left = left+'px';
-  crop.style.top = top+'px';
-  crop.style.width = width+'px';
-  crop.style.height = height+'px';
+  const left =
+  cropXPct/100*w;
 
-  // DARK OVERLAY
+  const top =
+  cropYPct/100*h;
 
-  const darkTop =
-  document.getElementById('darkTop');
+  const width =
+  cropWPct/100*w;
 
-  darkTop.style.left='0px';
-  darkTop.style.top='0px';
-  darkTop.style.width='100%';
-  darkTop.style.height=top+'px';
+  const height =
+  cropHPct/100*h;
 
-  const darkBottom =
-  document.getElementById('darkBottom');
+  crop.style.left=left+'px';
+  crop.style.top=top+'px';
+  crop.style.width=width+'px';
+  crop.style.height=height+'px';
 
-  darkBottom.style.left='0px';
-  darkBottom.style.top=(top+height)+'px';
-  darkBottom.style.width='100%';
-  darkBottom.style.height=(h-(top+height))+'px';
+  document.getElementById('darkTop').style.cssText=
+  `
+  left:0;
+  top:0;
+  width:100%;
+  height:${top}px;
+  `;
 
-  const darkLeft =
-  document.getElementById('darkLeft');
+  document.getElementById('darkBottom').style.cssText=
+  `
+  left:0;
+  top:${top+height}px;
+  width:100%;
+  height:${h-(top+height)}px;
+  `;
 
-  darkLeft.style.left='0px';
-  darkLeft.style.top=top+'px';
-  darkLeft.style.width=left+'px';
-  darkLeft.style.height=height+'px';
+  document.getElementById('darkLeft').style.cssText=
+  `
+  left:0;
+  top:${top}px;
+  width:${left}px;
+  height:${height}px;
+  `;
 
-  const darkRight =
-  document.getElementById('darkRight');
-
-  darkRight.style.left=(left+width)+'px';
-  darkRight.style.top=top+'px';
-  darkRight.style.width=(w-(left+width))+'px';
-  darkRight.style.height=height+'px';
+  document.getElementById('darkRight').style.cssText=
+  `
+  left:${left+width}px;
+  top:${top}px;
+  width:${w-(left+width)}px;
+  height:${height}px;
+  `;
 
   document
   .getElementById('cropInfo')
-  .innerHTML =
+  .innerHTML=
   `
   X:${cropXPct.toFixed(1)}%
   |
@@ -392,16 +468,12 @@ function renderCrop(){
 
 }
 
-// =========================
-// CROP DRAG
-// =========================
-
 function initCropDrag(){
 
   const stage =
   document.getElementById('videoStage');
 
-  const handles = {
+  const handles={
 
     top:
     document.getElementById('topHandle'),
@@ -442,8 +514,15 @@ function initCropDrag(){
       sw=cropWPct;
       sh=cropHPct;
 
-      window.addEventListener('mousemove',move);
-      window.addEventListener('mouseup',up);
+      window.addEventListener(
+        'mousemove',
+        move
+      );
+
+      window.addEventListener(
+        'mouseup',
+        up
+      );
 
       window.addEventListener(
         'touchmove',
@@ -451,7 +530,10 @@ function initCropDrag(){
         {passive:false}
       );
 
-      window.addEventListener('touchend',up);
+      window.addEventListener(
+        'touchend',
+        up
+      );
 
     }
 
@@ -468,10 +550,12 @@ function initCropDrag(){
       e.clientY;
 
       const dx =
-      (x-startX)/stage.clientWidth*100;
+      (x-startX)/
+      stage.clientWidth*100;
 
       const dy =
-      (y-startY)/stage.clientHeight*100;
+      (y-startY)/
+      stage.clientHeight*100;
 
       if(type==='move'){
 
@@ -506,19 +590,19 @@ function initCropDrag(){
 
       }
 
-      cropXPct =
+      cropXPct=
       Math.max(
         0,
         Math.min(95,cropXPct)
       );
 
-      cropYPct =
+      cropYPct=
       Math.max(
         0,
         Math.min(95,cropYPct)
       );
 
-      cropWPct =
+      cropWPct=
       Math.max(
         5,
         Math.min(
@@ -527,7 +611,7 @@ function initCropDrag(){
         )
       );
 
-      cropHPct =
+      cropHPct=
       Math.max(
         5,
         Math.min(
@@ -542,14 +626,32 @@ function initCropDrag(){
 
     function up(){
 
-      window.removeEventListener('mousemove',move);
-      window.removeEventListener('mouseup',up);
-      window.removeEventListener('touchmove',move);
-      window.removeEventListener('touchend',up);
+      window.removeEventListener(
+        'mousemove',
+        move
+      );
+
+      window.removeEventListener(
+        'mouseup',
+        up
+      );
+
+      window.removeEventListener(
+        'touchmove',
+        move
+      );
+
+      window.removeEventListener(
+        'touchend',
+        up
+      );
 
     }
 
-    el.addEventListener('mousedown',down);
+    el.addEventListener(
+      'mousedown',
+      down
+    );
 
     el.addEventListener(
       'touchstart',
@@ -566,10 +668,6 @@ function initCropDrag(){
   bind(handles.move,'move');
 
 }
-
-// =========================
-// PRESETS
-// =========================
 
 function presetBottom(){
 
@@ -604,58 +702,118 @@ function presetTop(){
 
 }
 
-// =========================
-// CLEAN OCR TEXT
-// =========================
+function isolateSubtitle(canvas){
 
-function cleanText(text){
+  const src =
+  cv.imread(canvas);
 
-  return text
+  const gray =
+  new cv.Mat();
 
-  .replace(/[|¦¥¢©®™]/g,'')
+  cv.cvtColor(
+    src,
+    gray,
+    cv.COLOR_RGBA2GRAY
+  );
 
-  .replace(/[^ -~\n]/g,'')
+  const blur =
+  new cv.Mat();
 
-  .replace(/\s+/g,' ')
+  cv.GaussianBlur(
+    gray,
+    blur,
+    new cv.Size(3,3),
+    0
+  );
 
-  .trim();
+  cv.equalizeHist(
+    blur,
+    blur
+  );
+
+  const thresh =
+  new cv.Mat();
+
+  cv.adaptiveThreshold(
+    blur,
+    thresh,
+    255,
+    cv.ADAPTIVE_THRESH_GAUSSIAN_C,
+    cv.THRESH_BINARY,
+    11,
+    2
+  );
+
+  const kernel =
+  cv.Mat.ones(
+    2,
+    2,
+    cv.CV_8U
+  );
+
+  cv.morphologyEx(
+    thresh,
+    thresh,
+    cv.MORPH_OPEN,
+    kernel
+  );
+
+  cv.dilate(
+    thresh,
+    thresh,
+    kernel
+  );
+
+  const final =
+  new cv.Mat();
+
+  cv.resize(
+    thresh,
+    final,
+    new cv.Size(
+      thresh.cols*5,
+      thresh.rows*5
+    ),
+    0,
+    0,
+    cv.INTER_CUBIC
+  );
+
+  cv.imshow(
+    'cleanCanvas',
+    final
+  );
+
+  src.delete();
+  gray.delete();
+  blur.delete();
+  thresh.delete();
+  kernel.delete();
+  final.delete();
 
 }
 
-// =========================
-// TEST OCR
-// =========================
-
 async function testOCR(){
-
-  if(!video.videoWidth) return;
-
-  const status =
-  document.getElementById('status');
-
-  const preview =
-  document.getElementById('ocrPreview');
-
-  preview.innerHTML='Running OCR...';
-
-  status.innerHTML='Preparing frame...';
 
   const canvas =
   document.createElement('canvas');
 
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  canvas.width =
+  video.videoWidth;
+
+  canvas.height =
+  video.videoHeight;
 
   const ctx =
-  canvas.getContext(
-    '2d',
-    {willReadFrequently:true}
-  );
+  canvas.getContext('2d');
 
   ctx.drawImage(video,0,0);
 
-  const vW = video.videoWidth;
-  const vH = video.videoHeight;
+  const vW =
+  video.videoWidth;
+
+  const vH =
+  video.videoHeight;
 
   const cX =
   Math.floor(cropXPct/100*vW);
@@ -672,24 +830,11 @@ async function testOCR(){
   const crop =
   document.createElement('canvas');
 
-  crop.width = cW;
-  crop.height = cH;
+  crop.width=cW;
+  crop.height=cH;
 
   const cc =
-  crop.getContext(
-    '2d',
-    {willReadFrequently:true}
-  );
-
-  // BLACK BACKGROUND
-
-  cc.fillStyle='black';
-  cc.fillRect(0,0,cW,cH);
-
-  // FILTER
-
-  cc.filter =
-  'grayscale(1) contrast(4) brightness(1.4)';
+  crop.getContext('2d');
 
   cc.drawImage(
     canvas,
@@ -703,100 +848,28 @@ async function testOCR(){
     cH
   );
 
-  // THRESHOLD
-
-  const img =
-  cc.getImageData(0,0,cW,cH);
-
-  const px = img.data;
-
-  const threshold =
-  parseInt(
-    document.getElementById('threshold').value
-  );
-
-  for(let i=0;i<px.length;i+=4){
-
-    const r = px[i];
-    const g = px[i+1];
-    const b = px[i+2];
-
-    const brightness =
-      0.299*r+
-      0.587*g+
-      0.114*b;
-
-    let val = 0;
-
-    if(brightness > threshold){
-      val = 255;
-    }else{
-      val = 0;
-    }
-
-    px[i]=val;
-    px[i+1]=val;
-    px[i+2]=val;
-
-  }
-
-  cc.putImageData(img,0,0);
-
-  // UPSCALE
-
-  const big =
-  document.createElement('canvas');
-
-  big.width = cW*5;
-  big.height = cH*5;
-
-  big
-  .getContext('2d')
-  .drawImage(
-    crop,
-    0,
-    0,
-    big.width,
-    big.height
-  );
-
-  status.innerHTML='Loading OCR engine...';
+  isolateSubtitle(crop);
 
   const worker =
   await Tesseract.createWorker(
-    document.getElementById('ocrLang').value
+    'ind+eng'
   );
 
-  await worker.setParameters({
-
-    tessedit_pageseg_mode:'7',
-
-    preserve_interword_spaces:'1',
-
-    tessedit_char_whitelist:
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,?!:;\'"()- '
-
-  });
-
-  status.innerHTML='Running OCR...';
-
   const result =
-  await worker.recognize(big);
+  await worker.recognize(
+    document.getElementById('cleanCanvas')
+  );
 
   await worker.terminate();
 
-  let text =
-  cleanText(
-    result.data.text
-  );
+  document
+  .getElementById('ocrPreview')
+  .innerHTML =
+  result.data.text;
 
-  if(!text){
-    text='(tidak ada teks terbaca)';
-  }
-
-  preview.innerHTML = text;
-
-  status.innerHTML =
+  document
+  .getElementById('status')
+  .innerHTML =
   `
   OCR Confidence:
   ${Math.round(result.data.confidence)}%
@@ -804,7 +877,434 @@ async function testOCR(){
 
 }
 
+function subtitleDifference(a,b){
+
+  if(!a || !b)
+    return 999;
+
+  let diff = 0;
+
+  for(let i=0;i<a.length;i+=4){
+
+    diff += Math.abs(a[i]-b[i]);
+
+  }
+
+  return diff/(a.length/4);
+
+}
+
+function similarity(a,b){
+
+  a=a.toLowerCase();
+  b=b.toLowerCase();
+
+  let same=0;
+
+  for(
+    let i=0;
+    i<Math.min(a.length,b.length);
+    i++
+  ){
+
+    if(a[i]===b[i]){
+      same++;
+    }
+
+  }
+
+  return same/
+  Math.max(a.length,b.length);
+
+}
+
+function hasSubtitle(imageData){
+
+  const px =
+  imageData.data;
+
+  let white=0;
+
+  for(let i=0;i<px.length;i+=4){
+
+    if(px[i]>240){
+      white++;
+    }
+
+  }
+
+  return (
+    white/
+    (imageData.width*imageData.height)
+  ) > 0.01;
+
+}
+
+function cleanSubtitleText(text){
+
+  return text
+
+  .replace(/[^\w\s.,?!:;'"()-]/g,'')
+
+  .replace(/\s+/g,' ')
+
+  .trim();
+
+}
+
+async function startSubtitleScan(){
+
+  subtitles=[];
+
+  const worker =
+  await Tesseract.createWorker(
+    'ind+eng'
+  );
+
+  const duration =
+  video.duration;
+
+  let currentTime=0;
+
+  while(currentTime<duration){
+
+    document
+    .getElementById(
+      'scanProgress'
+    )
+    .value =
+    (currentTime/duration)*100;
+
+    video.currentTime =
+    currentTime;
+
+    await new Promise(
+      r=>video.onseeked=r
+    );
+
+    const canvas =
+    document.createElement('canvas');
+
+    canvas.width =
+    video.videoWidth;
+
+    canvas.height =
+    video.videoHeight;
+
+    const ctx =
+    canvas.getContext('2d');
+
+    ctx.drawImage(video,0,0);
+
+    const vW =
+    video.videoWidth;
+
+    const vH =
+    video.videoHeight;
+
+    const cX =
+    Math.floor(cropXPct/100*vW);
+
+    const cY =
+    Math.floor(cropYPct/100*vH);
+
+    const cW =
+    Math.floor(cropWPct/100*vW);
+
+    const cH =
+    Math.floor(cropHPct/100*vH);
+
+    const crop =
+    document.createElement('canvas');
+
+    crop.width=cW;
+    crop.height=cH;
+
+    const cc =
+    crop.getContext('2d');
+
+    cc.drawImage(
+      canvas,
+      cX,
+      cY,
+      cW,
+      cH,
+      0,
+      0,
+      cW,
+      cH
+    );
+
+    isolateSubtitle(crop);
+
+    const cleanCanvas =
+    document.getElementById(
+      'cleanCanvas'
+    );
+
+    const cleanCtx =
+    cleanCanvas.getContext('2d');
+
+    const cleanData =
+    cleanCtx.getImageData(
+      0,
+      0,
+      cleanCanvas.width,
+      cleanCanvas.height
+    );
+
+    if(!hasSubtitle(cleanData)){
+
+      currentTime += scanStep;
+
+      continue;
+
+    }
+
+    const diff =
+    subtitleDifference(
+      prevSubtitleFrame,
+      cleanData.data
+    );
+
+    prevSubtitleFrame =
+    cleanData.data;
+
+    if(diff < 8){
+
+      scanStep=1.2;
+
+      currentTime += scanStep;
+
+      continue;
+
+    }
+
+    scanStep=0.3;
+
+    const result =
+    await worker.recognize(
+      cleanCanvas
+    );
+
+    const confidence =
+    result.data.confidence;
+
+    if(confidence < 45){
+
+      currentTime += scanStep;
+
+      continue;
+
+    }
+
+    const text =
+    cleanSubtitleText(
+      result.data.text
+    );
+
+    if(text.length < 3){
+
+      currentTime += scanStep;
+
+      continue;
+
+    }
+
+    const sim =
+    similarity(
+      currentSubtitle,
+      text
+    );
+
+    if(sim >= 0.8){
+
+      subtitleHoldTime =
+      currentTime;
+
+    }else{
+
+      if(currentSubtitle){
+
+        const dur =
+        subtitleHoldTime -
+        subtitleStart;
+
+        if(dur > MIN_SUB_DURATION){
+
+          subtitles.push({
+
+            start:
+            subtitleStart,
+
+            end:
+            subtitleHoldTime,
+
+            text:
+            currentSubtitle
+
+          });
+
+        }
+
+      }
+
+      currentSubtitle =
+      text;
+
+      subtitleStart =
+      currentTime;
+
+      subtitleHoldTime =
+      currentTime;
+
+      document
+      .getElementById(
+        'ocrPreview'
+      )
+      .innerHTML =
+      text;
+
+    }
+
+    currentTime += scanStep;
+
+  }
+
+  if(currentSubtitle){
+
+    subtitles.push({
+
+      start:
+      subtitleStart,
+
+      end:
+      duration,
+
+      text:
+      currentSubtitle
+
+    });
+
+  }
+
+  await worker.terminate();
+
+  mergeSubtitles();
+
+  document
+  .getElementById(
+    'srtPreview'
+  )
+  .value =
+  buildSRT();
+
+}
+
+function mergeSubtitles(){
+
+  const merged=[];
+
+  for(const sub of subtitles){
+
+    const last =
+    merged[
+      merged.length-1
+    ];
+
+    if(
+      last &&
+      similarity(
+        last.text,
+        sub.text
+      ) > 0.85
+    ){
+
+      last.end=sub.end;
+
+    }else{
+
+      merged.push(sub);
+
+    }
+
+  }
+
+  subtitles=merged;
+
+}
+
+function srtTime(sec){
+
+  const h =
+  Math.floor(sec/3600);
+
+  const m =
+  Math.floor((sec%3600)/60);
+
+  const s =
+  Math.floor(sec%60);
+
+  const ms =
+  Math.floor(
+    (sec-Math.floor(sec))*1000
+  );
+
+  return `${
+
+    String(h).padStart(2,'0')
+
+  }:${
+    String(m).padStart(2,'0')
+  }:${
+    String(s).padStart(2,'0')
+  },${
+    String(ms).padStart(3,'0')
+  }`;
+
+}
+
+function buildSRT(){
+
+  let srt='';
+
+  subtitles.forEach((sub,index)=>{
+
+    srt +=
+`${index+1}
+${srtTime(sub.start)} --> ${srtTime(sub.end)}
+${sub.text}
+
+`;
+
+  });
+
+  return srt;
+
+}
+
+function downloadSRT(){
+
+  const blob =
+  new Blob(
+    [buildSRT()],
+    {type:'text/plain'}
+  );
+
+  const a =
+  document.createElement('a');
+
+  a.href =
+  URL.createObjectURL(blob);
+
+  a.download =
+  'subtitle.srt';
+
+  a.click();
+
+}
+
 </script>
 
 </body>
-</html>
+  </html>
