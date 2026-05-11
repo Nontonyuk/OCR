@@ -8,7 +8,7 @@
 // GANTI DENGAN API KEY GEMINI KAMU
 
 const GEMINI_API_KEY =
-'PASTE_API_KEY_DISINI';
+'AIzaSyDN6ilZFs8c6aYXvoDJC03OxjD88RI3TKs';
 
 
 // ========================================
