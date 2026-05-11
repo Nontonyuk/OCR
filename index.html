@@ -1,19 +1,183 @@
+index.html
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
 
-<title>Movie Subtitle Extractor</title>
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<title>
+Movie Subtitle Extractor
+</title>
 
-<script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+<link
+rel="stylesheet"
+href="css/style.css">
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script async
+src="https://docs.opencv.org/4.x/opencv.js">
+</script>
 
-<style>
+<script
+src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js">
+</script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>
+Movie Subtitle Extractor
+</h1>
+
+<div class="desc">
+Ekstrak hard subtitle film menjadi file .srt langsung dari browser.
+</div>
+
+<div class="card">
+
+<input
+type="file"
+id="fileInput"
+accept="video/*">
+
+</div>
+
+<div
+class="video-wrap"
+id="videoWrap">
+
+<div class="card">
+
+<div
+class="video-stage"
+id="videoStage">
+
+<video
+id="video"
+controls
+playsinline>
+</video>
+
+<div class="dark" id="darkTop"></div>
+<div class="dark" id="darkBottom"></div>
+<div class="dark" id="darkLeft"></div>
+<div class="dark" id="darkRight"></div>
+
+<div id="cropBox">
+
+<div id="cropLabel">
+SUBTITLE AREA
+</div>
+
+<div class="handle top" id="topHandle"></div>
+<div class="handle bottom" id="bottomHandle"></div>
+<div class="handle left" id="leftHandle"></div>
+<div class="handle right" id="rightHandle"></div>
+
+<div id="moveArea"></div>
+
+</div>
+
+</div>
+
+<div class="info" id="cropInfo"></div>
+
+<div class="controls">
+
+<button onclick="presetBottom()">
+Bottom
+</button>
+
+<button onclick="presetMiddle()">
+Middle
+</button>
+
+<button onclick="presetTop()">
+Top
+</button>
+
+<button onclick="testOCR()">
+TEST OCR
+</button>
+
+<button onclick="startSubtitleScan()">
+START SCAN
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>
+Clean Subtitle
+</h2>
+
+<canvas id="cleanCanvas"></canvas>
+
+</div>
+
+<div class="card">
+
+<h2>
+OCR Preview
+</h2>
+
+<div id="ocrPreview">
+Belum ada OCR...
+</div>
+
+<div id="status"></div>
+
+<progress
+id="scanProgress"
+max="100"
+value="0">
+</progress>
+
+</div>
+
+<div class="card">
+
+<h2>
+SRT Result
+</h2>
+
+<textarea id="srtPreview"></textarea>
+
+<div class="controls">
+
+<button onclick="downloadSRT()">
+DOWNLOAD SRT
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/ocr.js"></script>
+<script src="js/subtitle.js"></script>
+<script src="js/srt.js"></script>
+
+</body>
+</html>
+
+---
+
+css/style.css
 
 *{
   margin:0;
@@ -24,7 +188,7 @@
 body{
   background:#070b12;
   color:white;
-  font-family:'Inter',sans-serif;
+  font-family:Arial,sans-serif;
   padding:18px;
 }
 
@@ -36,7 +200,10 @@ body{
 h1{
   font-size:32px;
   margin-bottom:10px;
-  font-weight:800;
+}
+
+h2{
+  margin-bottom:15px;
 }
 
 .desc{
@@ -88,7 +255,6 @@ video{
   position:absolute;
   border:3px solid #00d2ff;
   background:rgba(0,210,255,.12);
-  z-index:5;
 }
 
 #cropLabel{
@@ -170,7 +336,6 @@ button:hover{
   margin-top:12px;
   color:#90a5b9;
   line-height:1.8;
-  font-size:14px;
 }
 
 #ocrPreview{
@@ -184,7 +349,6 @@ button:hover{
 #status{
   margin-top:12px;
   color:#9cb0c5;
-  font-size:14px;
 }
 
 #cleanCanvas{
@@ -211,156 +375,14 @@ progress{
   margin-top:15px;
 }
 
-</style>
-</head>
-<body>
+---
 
-<div class="container">
-
-<h1>Movie Subtitle Extractor</h1>
-
-<div class="desc">
-Ekstrak hard subtitle film menjadi file .srt langsung dari browser.
-</div>
-
-<div class="card">
-
-<input type="file" id="fileInput" accept="video/*">
-
-</div>
-
-<div class="video-wrap" id="videoWrap">
-
-<div class="card">
-
-<div class="video-stage" id="videoStage">
-
-<video id="video" controls playsinline></video>
-
-<div class="dark" id="darkTop"></div>
-<div class="dark" id="darkBottom"></div>
-<div class="dark" id="darkLeft"></div>
-<div class="dark" id="darkRight"></div>
-
-<div id="cropBox">
-
-<div id="cropLabel">
-SUBTITLE AREA
-</div>
-
-<div class="handle top" id="topHandle"></div>
-<div class="handle bottom" id="bottomHandle"></div>
-<div class="handle left" id="leftHandle"></div>
-<div class="handle right" id="rightHandle"></div>
-
-<div id="moveArea"></div>
-
-</div>
-
-</div>
-
-<div class="info" id="cropInfo"></div>
-
-<div class="controls">
-
-<button onclick="presetBottom()">
-Bottom
-</button>
-
-<button onclick="presetMiddle()">
-Middle
-</button>
-
-<button onclick="presetTop()">
-Top
-</button>
-
-<button onclick="testOCR()">
-TEST OCR
-</button>
-
-<button onclick="startSubtitleScan()">
-START SCAN
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="card">
-
-<h2 style="margin-bottom:15px">
-Clean Subtitle
-</h2>
-
-<canvas id="cleanCanvas"></canvas>
-
-</div>
-
-<div class="card">
-
-<h2 style="margin-bottom:15px">
-OCR Preview
-</h2>
-
-<div id="ocrPreview">
-Belum ada OCR...
-</div>
-
-<div id="status"></div>
-
-<progress
-id="scanProgress"
-max="100"
-value="0">
-</progress>
-
-</div>
-
-<div class="card">
-
-<h2 style="margin-bottom:15px">
-SRT Result
-</h2>
-
-<textarea id="srtPreview"></textarea>
-
-<div class="controls">
-
-<button onclick="downloadSRT()">
-DOWNLOAD SRT
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-<script>
+js/app.js
 
 let cropXPct = 15;
 let cropYPct = 76;
 let cropWPct = 70;
 let cropHPct = 14;
-
-let subtitles = [];
-
-let prevSubtitleFrame = null;
-
-let currentSubtitle = '';
-
-let subtitleStart = 0;
-
-let subtitleHoldTime = 0;
-
-const HOLD_DURATION = 1.0;
-
-const MIN_SUB_DURATION = 1.2;
-
-let scanStep = 0.8;
 
 const video =
 document.getElementById('video');
@@ -451,19 +473,6 @@ function renderCrop(){
   top:${top}px;
   width:${w-(left+width)}px;
   height:${height}px;
-  `;
-
-  document
-  .getElementById('cropInfo')
-  .innerHTML=
-  `
-  X:${cropXPct.toFixed(1)}%
-  |
-  Y:${cropYPct.toFixed(1)}%
-  |
-  W:${cropWPct.toFixed(1)}%
-  |
-  H:${cropHPct.toFixed(1)}%
   `;
 
 }
@@ -590,36 +599,6 @@ function initCropDrag(){
 
       }
 
-      cropXPct=
-      Math.max(
-        0,
-        Math.min(95,cropXPct)
-      );
-
-      cropYPct=
-      Math.max(
-        0,
-        Math.min(95,cropYPct)
-      );
-
-      cropWPct=
-      Math.max(
-        5,
-        Math.min(
-          100-cropXPct,
-          cropWPct
-        )
-      );
-
-      cropHPct=
-      Math.max(
-        5,
-        Math.min(
-          100-cropYPct,
-          cropHPct
-        )
-      );
-
       renderCrop();
 
     }
@@ -702,6 +681,10 @@ function presetTop(){
 
 }
 
+---
+
+js/ocr.js
+
 function isolateSubtitle(canvas){
 
   const src =
@@ -744,52 +727,15 @@ function isolateSubtitle(canvas){
     2
   );
 
-  const kernel =
-  cv.Mat.ones(
-    2,
-    2,
-    cv.CV_8U
-  );
-
-  cv.morphologyEx(
-    thresh,
-    thresh,
-    cv.MORPH_OPEN,
-    kernel
-  );
-
-  cv.dilate(
-    thresh,
-    thresh,
-    kernel
-  );
-
-  const final =
-  new cv.Mat();
-
-  cv.resize(
-    thresh,
-    final,
-    new cv.Size(
-      thresh.cols*5,
-      thresh.rows*5
-    ),
-    0,
-    0,
-    cv.INTER_CUBIC
-  );
-
   cv.imshow(
     'cleanCanvas',
-    final
+    thresh
   );
 
   src.delete();
   gray.delete();
   blur.delete();
   thresh.delete();
-  kernel.delete();
-  final.delete();
 
 }
 
@@ -867,15 +813,19 @@ async function testOCR(){
   .innerHTML =
   result.data.text;
 
-  document
-  .getElementById('status')
-  .innerHTML =
-  `
-  OCR Confidence:
-  ${Math.round(result.data.confidence)}%
-  `;
-
 }
+
+---
+
+js/subtitle.js
+
+let subtitles = [];
+
+let prevSubtitleFrame = null;
+
+let currentSubtitle = '';
+
+let subtitleStart = 0;
 
 function subtitleDifference(a,b){
 
@@ -915,40 +865,6 @@ function similarity(a,b){
 
   return same/
   Math.max(a.length,b.length);
-
-}
-
-function hasSubtitle(imageData){
-
-  const px =
-  imageData.data;
-
-  let white=0;
-
-  for(let i=0;i<px.length;i+=4){
-
-    if(px[i]>240){
-      white++;
-    }
-
-  }
-
-  return (
-    white/
-    (imageData.width*imageData.height)
-  ) > 0.01;
-
-}
-
-function cleanSubtitleText(text){
-
-  return text
-
-  .replace(/[^\w\s.,?!:;'"()-]/g,'')
-
-  .replace(/\s+/g,' ')
-
-  .trim();
 
 }
 
@@ -1037,160 +953,58 @@ async function startSubtitleScan(){
 
     isolateSubtitle(crop);
 
-    const cleanCanvas =
-    document.getElementById(
-      'cleanCanvas'
-    );
-
-    const cleanCtx =
-    cleanCanvas.getContext('2d');
-
-    const cleanData =
-    cleanCtx.getImageData(
-      0,
-      0,
-      cleanCanvas.width,
-      cleanCanvas.height
-    );
-
-    if(!hasSubtitle(cleanData)){
-
-      currentTime += scanStep;
-
-      continue;
-
-    }
-
-    const diff =
-    subtitleDifference(
-      prevSubtitleFrame,
-      cleanData.data
-    );
-
-    prevSubtitleFrame =
-    cleanData.data;
-
-    if(diff < 8){
-
-      scanStep=1.2;
-
-      currentTime += scanStep;
-
-      continue;
-
-    }
-
-    scanStep=0.3;
-
     const result =
     await worker.recognize(
-      cleanCanvas
+      document.getElementById(
+        'cleanCanvas'
+      )
     );
-
-    const confidence =
-    result.data.confidence;
-
-    if(confidence < 45){
-
-      currentTime += scanStep;
-
-      continue;
-
-    }
 
     const text =
-    cleanSubtitleText(
-      result.data.text
-    );
+    result.data.text.trim();
 
-    if(text.length < 3){
-
-      currentTime += scanStep;
-
-      continue;
-
-    }
-
-    const sim =
-    similarity(
-      currentSubtitle,
-      text
-    );
-
-    if(sim >= 0.8){
-
-      subtitleHoldTime =
-      currentTime;
-
-    }else{
+    if(
+      text &&
+      similarity(
+        currentSubtitle,
+        text
+      ) < 0.8
+    ){
 
       if(currentSubtitle){
 
-        const dur =
-        subtitleHoldTime -
-        subtitleStart;
+        subtitles.push({
 
-        if(dur > MIN_SUB_DURATION){
+          start:
+          subtitleStart,
 
-          subtitles.push({
+          end:
+          currentTime,
 
-            start:
-            subtitleStart,
+          text:
+          currentSubtitle
 
-            end:
-            subtitleHoldTime,
-
-            text:
-            currentSubtitle
-
-          });
-
-        }
+        });
 
       }
 
-      currentSubtitle =
-      text;
+      currentSubtitle=text;
 
-      subtitleStart =
-      currentTime;
-
-      subtitleHoldTime =
-      currentTime;
+      subtitleStart=currentTime;
 
       document
       .getElementById(
         'ocrPreview'
       )
-      .innerHTML =
-      text;
+      .innerHTML=text;
 
     }
 
-    currentTime += scanStep;
-
-  }
-
-  if(currentSubtitle){
-
-    subtitles.push({
-
-      start:
-      subtitleStart,
-
-      end:
-      duration,
-
-      text:
-      currentSubtitle
-
-    });
+    currentTime += 1;
 
   }
 
   await worker.terminate();
-
-  mergeSubtitles();
 
   document
   .getElementById(
@@ -1201,38 +1015,9 @@ async function startSubtitleScan(){
 
 }
 
-function mergeSubtitles(){
+---
 
-  const merged=[];
-
-  for(const sub of subtitles){
-
-    const last =
-    merged[
-      merged.length-1
-    ];
-
-    if(
-      last &&
-      similarity(
-        last.text,
-        sub.text
-      ) > 0.85
-    ){
-
-      last.end=sub.end;
-
-    }else{
-
-      merged.push(sub);
-
-    }
-
-  }
-
-  subtitles=merged;
-
-}
+js/srt.js
 
 function srtTime(sec){
 
@@ -1303,8 +1088,3 @@ function downloadSRT(){
   a.click();
 
 }
-
-</script>
-
-</body>
-  </html>
