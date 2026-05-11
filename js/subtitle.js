@@ -51,10 +51,7 @@ async function startSubtitleScan(){
 
   subtitles=[];
 
-  const worker =
-  await Tesseract.createWorker(
-    'ind+eng'
-  );
+  const text = await geminiOCR(cleanCanvas);
 
   const duration =
   video.duration;
