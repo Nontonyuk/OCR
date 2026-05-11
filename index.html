@@ -1,821 +1,741 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>SubRip — Hard Subtitle Extractor</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Hard Subtitle Extractor</title>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
 <style>
-:root {
-  --bg: #070a0f;
-  --surface: #0e1520;
-  --border: #1c2a3a;
-  --accent: #00e5ff;
-  --accent2: #ff6b35;
-  --text: #e8f0fe;
-  --muted: #4a6080;
-  --success: #00c896;
-  --warning: #ffb800;
-  --error: #ff4757;
-  --mono: 'Space Mono', monospace;
-  --sans: 'Syne', sans-serif;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html { scroll-behavior: smooth; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--sans);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image:
-    linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none; z-index: 0;
-}
-.orb { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; }
-.orb-1 { width: 400px; height: 400px; background: rgba(0,229,255,0.07); top: -150px; left: -150px; }
-.orb-2 { width: 350px; height: 350px; background: rgba(255,107,53,0.05); bottom: -100px; right: -100px; }
-
-.container { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 0 16px 80px; }
-
-/* Header */
-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 0 36px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 40px;
-}
-.logo { display: flex; align-items: center; gap: 10px; }
-.logo-icon {
-  width: 34px; height: 34px;
-  border: 2px solid var(--accent); border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--mono); font-size: 11px; color: var(--accent);
-  font-weight: 700; letter-spacing: -0.5px;
-  background: rgba(0,229,255,0.07);
-}
-.logo-text { font-size: 1rem; font-weight: 800; letter-spacing: 0.15em; }
-.logo-text span { color: var(--accent); }
-.badge {
-  font-family: var(--mono); font-size: 0.6rem;
-  padding: 4px 8px; border: 1px solid var(--border);
-  border-radius: 20px; color: var(--muted); letter-spacing: 0.08em;
-  display: none;
-}
-@media(min-width:500px){ .badge { display: block; } }
-
-/* Hero */
-.hero { margin-bottom: 36px; }
-.hero h1 { font-size: clamp(1.9rem, 6vw, 3.2rem); font-weight: 800; line-height: 1.1; margin-bottom: 14px; }
-.hero h1 em { font-style: normal; color: var(--accent); }
-.hero p { color: var(--muted); font-size: 0.95rem; line-height: 1.7; max-width: 520px; }
-
-/* ── UPLOAD AREA ── */
-.upload-area {
-  background: var(--surface);
-  border: 2px dashed var(--border);
-  border-radius: 20px;
-  padding: 40px 20px;
-  text-align: center;
-  margin-bottom: 24px;
-  transition: border-color 0.3s, background 0.3s;
-  position: relative;
-  overflow: hidden;
-}
-.upload-area.dragover {
-  border-color: var(--accent);
-  background: rgba(0,229,255,0.05);
-}
-.upload-icon { font-size: 3.5rem; margin-bottom: 14px; display: block; }
-.upload-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
-.upload-sub { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); margin-bottom: 24px; line-height: 1.8; }
-
-/* BIG UPLOAD BUTTON — Android friendly */
-.upload-btn-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-
-.btn-upload-main {
-  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  width: 100%; max-width: 320px;
-  padding: 16px 24px;
-  background: var(--accent); color: #000;
-  font-family: var(--sans); font-size: 1rem; font-weight: 800;
-  border-radius: 12px; border: none; cursor: pointer;
-  transition: opacity 0.2s, transform 0.15s;
-  letter-spacing: 0.02em;
-  -webkit-appearance: none;
-}
-.btn-upload-main:active { transform: scale(0.97); opacity: 0.85; }
-.btn-upload-main .icon { font-size: 1.2rem; }
-
-/* Hidden real file input — triggered by label */
-#fileInput {
-  position: absolute;
-  width: 1px; height: 1px;
-  opacity: 0; overflow: hidden;
-  left: -9999px; top: -9999px;
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
 }
 
-.upload-formats {
-  font-family: var(--mono); font-size: 0.65rem; color: var(--muted);
-  letter-spacing: 0.05em;
+body{
+  background:#0b1018;
+  color:#fff;
+  font-family:Arial;
+  padding:20px;
 }
 
-/* Settings */
-.settings-panel {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 16px; padding: 24px; margin-bottom: 24px; display: none;
-}
-.settings-panel.visible { display: block; }
-.settings-title {
-  font-family: var(--mono); font-size: 0.65rem;
-  letter-spacing: 0.2em; color: var(--muted);
-  text-transform: uppercase; margin-bottom: 18px;
-}
-.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media(max-width:540px){ .settings-grid { grid-template-columns: 1fr; } }
-
-.field label {
-  display: block; font-family: var(--mono); font-size: 0.68rem;
-  color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; text-transform: uppercase;
-}
-.field select {
-  width: 100%; background: var(--bg); border: 1px solid var(--border);
-  border-radius: 8px; color: var(--text); font-family: var(--mono);
-  font-size: 0.82rem; padding: 10px 12px; outline: none; cursor: pointer;
-  -webkit-appearance: none; transition: border-color 0.2s;
-}
-.field select:focus { border-color: var(--accent); }
-
-.crop-options { display: flex; gap: 6px; flex-wrap: wrap; }
-.crop-btn {
-  flex: 1; min-width: 70px; padding: 8px 6px;
-  background: var(--bg); border: 1px solid var(--border);
-  border-radius: 8px; color: var(--muted); font-family: var(--mono);
-  font-size: 0.65rem; cursor: pointer; text-align: center;
-  transition: all 0.2s; letter-spacing: 0.03em;
-}
-.crop-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,0.07); }
-
-.range-row { display: flex; align-items: center; gap: 10px; }
-input[type="range"] {
-  flex: 1; height: 4px; border-radius: 2px;
-  accent-color: var(--accent); cursor: pointer; background: var(--border);
-  border: none; outline: none; -webkit-appearance: none;
-}
-.range-val { font-family: var(--mono); font-size: 0.78rem; color: var(--accent); min-width: 28px; text-align: right; }
-
-/* Video Preview */
-.video-preview { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 24px; }
-.video-preview.visible { display: block; }
-.preview-header {
-  padding: 14px 16px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-}
-.preview-filename {
-  font-family: var(--mono); font-size: 0.75rem; color: var(--accent);
-  display: flex; align-items: center; gap: 8px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.preview-filename::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
-.btn-remove {
-  background: none; border: 1px solid var(--border); border-radius: 6px;
-  color: var(--muted); font-size: 0.72rem; padding: 5px 10px;
-  cursor: pointer; font-family: var(--mono); transition: all 0.2s; flex-shrink: 0;
-}
-.btn-remove:hover { border-color: var(--error); color: var(--error); }
-.video-wrapper { position: relative; background: #000; }
-#videoEl { width: 100%; max-height: 300px; display: block; }
-.subtitle-region {
-  position: absolute; left: 0; right: 0;
-  border: 2px solid rgba(0,229,255,0.6);
-  background: rgba(0,229,255,0.07); pointer-events: none;
-}
-.subtitle-region-label {
-  position: absolute; top: -20px; left: 0;
-  font-family: var(--mono); font-size: 0.6rem; color: var(--accent);
-  letter-spacing: 0.1em; white-space: nowrap;
+.wrap{
+  max-width:1000px;
+  margin:auto;
 }
 
-/* Action row */
-.action-row { display: none; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
-.action-row.visible { display: flex; }
-
-.btn {
-  padding: 14px 24px; border-radius: 10px;
-  font-family: var(--sans); font-size: 0.95rem; font-weight: 700;
-  cursor: pointer; border: none; transition: all 0.2s;
-  display: inline-flex; align-items: center; gap: 8px;
-}
-.btn:active { transform: scale(0.97); }
-.btn-primary { background: var(--accent); color: #000; flex: 1; justify-content: center; }
-.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-.btn-ghost {
-  background: transparent; border: 1px solid var(--border); color: var(--text);
-}
-.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-.btn-success {
-  background: var(--success); color: #000;
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%,100% { box-shadow: 0 0 0 0 rgba(0,200,150,0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(0,200,150,0); }
+h1{
+  margin-bottom:20px;
 }
 
-/* Process panel */
-.process-panel {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 16px; padding: 24px; margin-bottom: 24px; display: none;
+.upload{
+  padding:20px;
+  border:2px dashed #3b4a5c;
+  border-radius:10px;
+  text-align:center;
+  margin-bottom:20px;
 }
-.process-panel.visible { display: block; }
-.process-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.process-title { font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
-.spinner {
-  width: 16px; height: 16px;
-  border: 2px solid var(--border); border-top-color: var(--accent);
-  border-radius: 50%; animation: spin 0.8s linear infinite; display: none;
-}
-.spinner.active { display: block; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.progress-bar-wrap { background: var(--bg); border-radius: 4px; height: 6px; margin-bottom: 10px; overflow: hidden; }
-.progress-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 4px; width: 0%; transition: width 0.4s ease; }
-.progress-info { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.68rem; color: var(--muted); margin-bottom: 14px; }
 
-.log-box {
-  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-  padding: 12px; height: 120px; overflow-y: auto;
-  font-family: var(--mono); font-size: 0.68rem; line-height: 1.9;
+button{
+  background:#00d2ff;
+  color:#000;
+  border:none;
+  padding:12px 20px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
 }
-.log-box::-webkit-scrollbar { width: 4px; }
-.log-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-.log-line { display: flex; gap: 10px; }
-.log-time { color: var(--muted); flex-shrink: 0; }
-.log-msg { color: var(--text); }
-.log-msg.ok { color: var(--success); }
-.log-msg.warn { color: var(--warning); }
-.log-msg.err { color: var(--error); }
-.log-msg.info { color: var(--accent); }
 
-.subtitle-list { max-height: 200px; overflow-y: auto; margin-top: 14px; }
-.subtitle-list::-webkit-scrollbar { width: 4px; }
-.subtitle-list::-webkit-scrollbar-thumb { background: var(--border); }
-.sub-item {
-  padding: 9px 12px; border-bottom: 1px solid var(--border);
-  display: grid; grid-template-columns: 24px 1fr auto;
-  gap: 10px; align-items: start; font-size: 0.82rem;
-  animation: fadeUp 0.3s ease;
+button:hover{
+  opacity:.9;
 }
-@keyframes fadeUp { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
-.sub-item:last-child { border-bottom: none; }
-.sub-num { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); padding-top: 2px; }
-.sub-text { color: var(--text); line-height: 1.5; }
-.sub-time { font-family: var(--mono); font-size: 0.62rem; color: var(--muted); white-space: nowrap; text-align: right; }
 
-/* Result */
-.result-panel {
-  background: linear-gradient(135deg, rgba(0,200,150,0.08), rgba(0,229,255,0.05));
-  border: 1px solid rgba(0,200,150,0.3); border-radius: 16px;
-  padding: 28px; text-align: center; display: none; margin-bottom: 24px;
+#videoBox{
+  display:none;
 }
-.result-panel.visible { display: block; }
-.result-emoji { font-size: 3rem; margin-bottom: 12px; }
-.result-panel h3 { font-size: 1.2rem; margin-bottom: 6px; }
-.result-panel > p { color: var(--muted); margin-bottom: 20px; font-size: 0.88rem; }
-.result-stats { display: flex; justify-content: center; gap: 32px; margin-bottom: 20px; flex-wrap: wrap; }
-.stat { text-align: center; }
-.stat-val { font-size: 1.8rem; font-weight: 800; color: var(--accent); font-family: var(--mono); display: block; }
-.stat-label { font-family: var(--mono); font-size: 0.62rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
-.srt-preview {
-  background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
-  padding: 14px; text-align: left; font-family: var(--mono); font-size: 0.68rem;
-  color: var(--text); line-height: 2; max-height: 180px; overflow-y: auto;
-  margin-bottom: 20px; white-space: pre-wrap;
-}
-.result-btns { display: flex; flex-direction: column; gap: 10px; }
-@media(min-width:500px){ .result-btns { flex-direction: row; justify-content: center; flex-wrap: wrap; } }
 
-/* Info cards */
-.info-section { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 40px; }
-@media(min-width:600px){ .info-section { grid-template-columns: repeat(3, 1fr); } }
-.info-card { border: 1px solid var(--border); border-radius: 12px; padding: 18px; background: var(--surface); }
-.info-card-icon { font-size: 1.4rem; margin-bottom: 8px; }
-.info-card h4 { font-size: 0.88rem; margin-bottom: 5px; }
-.info-card p { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
-
-/* Toast */
-.toast {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
-  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-  padding: 12px 20px; font-family: var(--mono); font-size: 0.78rem;
-  white-space: nowrap; opacity: 0; transition: all 0.3s ease; z-index: 999;
-  max-width: calc(100vw - 32px); text-align: center;
+.video-stage{
+  position:relative;
+  width:100%;
+  background:#000;
+  overflow:hidden;
+  border-radius:12px;
 }
-.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-.toast.success { border-color: var(--success); color: var(--success); }
-.toast.error { border-color: var(--error); color: var(--error); }
+
+video{
+  width:100%;
+  display:block;
+}
+
+#cropWindow{
+  position:absolute;
+  border:3px solid #00d2ff;
+  background:rgba(0,210,255,.08);
+  z-index:10;
+}
+
+#moveArea{
+  position:absolute;
+  inset:0;
+  cursor:move;
+}
+
+.handle{
+  position:absolute;
+  background:#00d2ff;
+  z-index:20;
+}
+
+.handle.top,
+.handle.bottom{
+  left:0;
+  right:0;
+  height:10px;
+  cursor:ns-resize;
+}
+
+.handle.top{
+  top:-5px;
+}
+
+.handle.bottom{
+  bottom:-5px;
+}
+
+.handle.left,
+.handle.right{
+  top:0;
+  bottom:0;
+  width:10px;
+  cursor:ew-resize;
+}
+
+.handle.left{
+  left:-5px;
+}
+
+.handle.right{
+  right:-5px;
+}
+
+#cropLabel{
+  position:absolute;
+  top:5px;
+  left:8px;
+  font-size:12px;
+  color:#00d2ff;
+  background:rgba(0,0,0,.6);
+  padding:3px 6px;
+  border-radius:4px;
+}
+
+.controls{
+  margin-top:15px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.settings{
+  margin-top:15px;
+  display:grid;
+  gap:12px;
+}
+
+select,input{
+  width:100%;
+  padding:10px;
+  background:#131b26;
+  color:#fff;
+  border:1px solid #2b3949;
+  border-radius:8px;
+}
+
+.progress{
+  margin-top:20px;
+  display:none;
+}
+
+.bar{
+  height:8px;
+  background:#222;
+  border-radius:20px;
+  overflow:hidden;
+}
+
+.fill{
+  height:100%;
+  width:0%;
+  background:#00d2ff;
+}
+
+#log{
+  margin-top:15px;
+  background:#111923;
+  padding:12px;
+  border-radius:10px;
+  height:180px;
+  overflow:auto;
+  font-size:13px;
+  line-height:1.7;
+}
+
+.result{
+  display:none;
+  margin-top:20px;
+}
+
+textarea{
+  width:100%;
+  height:250px;
+  background:#111923;
+  color:#fff;
+  border:1px solid #2b3949;
+  border-radius:10px;
+  padding:15px;
+}
+
+.info{
+  margin-top:10px;
+  color:#9fb1c5;
+  font-size:14px;
+}
 </style>
 </head>
 <body>
-<div class="orb orb-1"></div>
-<div class="orb orb-2"></div>
 
-<div class="container">
+<div class="wrap">
 
-  <!-- Header -->
-  <header>
-    <div class="logo">
-      <div class="logo-icon">SRT</div>
-      <div class="logo-text">SUB<span>RIP</span></div>
+<h1>Hard Subtitle Extractor</h1>
+
+<div class="upload">
+  <input type="file" id="fileInput" accept="video/*">
+</div>
+
+<div id="videoBox">
+
+  <div class="video-stage" id="videoStage">
+
+    <video id="video" controls></video>
+
+    <div id="cropWindow">
+
+      <div id="cropLabel">
+        DRAG SUBTITLE AREA
+      </div>
+
+      <div class="handle top" id="handleTop"></div>
+      <div class="handle bottom" id="handleBottom"></div>
+      <div class="handle left" id="handleLeft"></div>
+      <div class="handle right" id="handleRight"></div>
+
+      <div id="moveArea"></div>
+
     </div>
-    <div class="badge">HARD SUBTITLE EXTRACTOR v1.1</div>
-  </header>
 
-  <!-- Hero -->
-  <div class="hero">
-    <h1>Ekstrak <em>Hard Subtitle</em><br>dari Video ke SRT</h1>
-    <p>Upload video dengan subtitle yang terbakar (hardcoded), aplikasi membaca teks per frame pakai OCR dan menghasilkan file <strong>.srt</strong> siap unduh.</p>
   </div>
 
-  <!-- ── UPLOAD AREA ── -->
-  <div class="upload-area" id="uploadArea">
-    <span class="upload-icon">🎬</span>
-    <div class="upload-title">Pilih File Video</div>
-    <div class="upload-sub">
-      Subtitle hardcoded / terbakar di video<br>
-      MP4 · MKV · AVI · MOV · WEBM
+  <div class="info" id="cropInfo"></div>
+
+  <div class="settings">
+
+    <div>
+      <label>Bahasa OCR</label>
+      <select id="lang">
+        <option value="eng">English</option>
+        <option value="ind">Indonesia</option>
+        <option value="ind+eng" selected>Indonesia + English</option>
+      </select>
     </div>
 
-    <div class="upload-btn-wrap">
-      <!-- Label membungkus input → paling kompatibel di Android -->
-      <label for="fileInput" class="btn-upload-main">
-        <span class="icon">📂</span> Buka File Video
-      </label>
-      <input
-        type="file"
-        id="fileInput"
-        accept="video/mp4,video/x-matroska,video/avi,video/quicktime,video/webm,video/3gpp,video/*"
-      />
-      <div class="upload-formats">Ketuk tombol di atas untuk memilih dari galeri / file manager</div>
+    <div>
+      <label>Scan tiap berapa detik</label>
+      <select id="step">
+        <option value="0.3">0.3 detik</option>
+        <option value="0.5" selected>0.5 detik</option>
+        <option value="1">1 detik</option>
+      </select>
     </div>
+
+    <div>
+      <label>Threshold OCR</label>
+      <input type="range" id="threshold" min="50" max="250" value="160">
+    </div>
+
   </div>
 
-  <!-- Settings -->
-  <div class="settings-panel" id="settingsPanel">
-    <div class="settings-title">⚙ Pengaturan Ekstraksi</div>
-    <div class="settings-grid">
-
-      <div class="field">
-        <label>Bahasa OCR</label>
-        <select id="langSelect">
-          <option value="ind">🇮🇩 Indonesia</option>
-          <option value="eng">🇬🇧 English</option>
-          <option value="ind+eng" selected>🌐 Indo + English</option>
-          <option value="jpn">🇯🇵 Japanese</option>
-          <option value="chi_sim">🇨🇳 Chinese</option>
-          <option value="kor">🇰🇷 Korean</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Kecepatan Sampling</label>
-        <select id="sampleRate">
-          <option value="2">Tinggi (tiap 2 frame)</option>
-          <option value="5" selected>Normal (tiap 5 frame)</option>
-          <option value="10">Cepat (tiap 10 frame)</option>
-          <option value="30">Sangat Cepat (tiap 30 frame)</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Area Subtitle</label>
-        <div class="crop-options">
-          <div class="crop-btn active" data-top="75" data-height="22">Bawah</div>
-          <div class="crop-btn" data-top="63" data-height="32">Bawah+</div>
-          <div class="crop-btn" data-top="8" data-height="22">Atas</div>
-          <div class="crop-btn" data-top="35" data-height="30">Tengah</div>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Kontras OCR: <span id="threshVal">128</span></label>
-        <div class="range-row">
-          <input type="range" id="threshold" min="50" max="220" value="128"
-            oninput="document.getElementById('threshVal').textContent=this.value"/>
-          <span class="range-val" id="threshVal2">128</span>
-        </div>
-      </div>
-
-    </div>
+  <div class="controls">
+    <button onclick="startOCR()">START OCR</button>
+    <button onclick="autoBottom()">AUTO BOTTOM</button>
   </div>
 
-  <!-- Video Preview -->
-  <div class="video-preview" id="videoPreview">
-    <div class="preview-header">
-      <div class="preview-filename" id="previewFilename">video.mp4</div>
-      <button class="btn-remove" onclick="removeVideo()">✕ Hapus</button>
-    </div>
-    <div class="video-wrapper" id="videoWrapper">
-      <video id="videoEl" controls playsinline webkit-playsinline></video>
-      <div class="subtitle-region" id="subtitleRegion">
-        <div class="subtitle-region-label">AREA OCR</div>
-      </div>
-    </div>
+</div>
+
+<div class="progress" id="progressBox">
+
+  <div class="bar">
+    <div class="fill" id="fill"></div>
   </div>
 
-  <!-- Action Buttons -->
-  <div class="action-row" id="actionRow">
-    <button class="btn btn-primary" id="extractBtn" onclick="startExtraction()">
-      ▶ Mulai Ekstraksi
-    </button>
-    <button class="btn btn-ghost" onclick="removeVideo()">✕ Ganti</button>
+  <div id="status" style="margin-top:10px"></div>
+
+  <div id="log"></div>
+
+</div>
+
+<div class="result" id="result">
+
+  <h2>SRT RESULT</h2>
+
+  <textarea id="srt"></textarea>
+
+  <div class="controls">
+    <button onclick="downloadSRT()">DOWNLOAD SRT</button>
   </div>
 
-  <!-- Process Panel -->
-  <div class="process-panel" id="processPanel">
-    <div class="process-header">
-      <div class="process-title">
-        <div class="spinner" id="spinner"></div>
-        <span id="processTitle">Memproses Video...</span>
-      </div>
-      <span id="processPct" style="font-family:var(--mono);font-size:0.85rem;color:var(--accent)">0%</span>
-    </div>
-    <div class="progress-bar-wrap">
-      <div class="progress-bar" id="progressBar"></div>
-    </div>
-    <div class="progress-info">
-      <span id="progressLabel">Menganalisis frame...</span>
-      <span id="progressEta">--:--</span>
-    </div>
-    <div class="log-box" id="logBox"></div>
-    <div class="subtitle-list" id="subtitleList"></div>
-  </div>
+</div>
 
-  <!-- Result Panel -->
-  <div class="result-panel" id="resultPanel">
-    <div class="result-emoji">✅</div>
-    <h3>Ekstraksi Selesai!</h3>
-    <p>Subtitle berhasil diekstrak — siap diunduh sebagai file .srt</p>
-    <div class="result-stats">
-      <div class="stat">
-        <span class="stat-val" id="statLines">0</span>
-        <span class="stat-label">Subtitle</span>
-      </div>
-      <div class="stat">
-        <span class="stat-val" id="statFrames">0</span>
-        <span class="stat-label">Frame</span>
-      </div>
-      <div class="stat">
-        <span class="stat-val" id="statDuration">0s</span>
-        <span class="stat-label">Durasi</span>
-      </div>
-    </div>
-    <div class="srt-preview" id="srtPreview"></div>
-    <div class="result-btns">
-      <button class="btn btn-success" onclick="downloadSRT()">⬇ Download .SRT</button>
-      <button class="btn btn-ghost" onclick="copySRT()">📋 Salin</button>
-      <button class="btn btn-ghost" onclick="resetAll()">🔄 Video Lain</button>
-    </div>
-  </div>
+</div>
 
-  <!-- Info Cards -->
-  <div class="info-section">
-    <div class="info-card">
-      <div class="info-card-icon">🔒</div>
-      <h4>100% Lokal & Privat</h4>
-      <p>Semua proses berjalan di browser. Video tidak pernah dikirim ke server manapun.</p>
-    </div>
-    <div class="info-card">
-      <div class="info-card-icon">🔍</div>
-      <h4>OCR Cerdas</h4>
-      <p>Menggunakan Tesseract.js untuk membaca teks hardcoded yang terbakar di frame video.</p>
-    </div>
-    <div class="info-card">
-      <div class="info-card-icon">📄</div>
-      <h4>Format SRT Standar</h4>
-      <p>Output .srt kompatibel dengan VLC, MX Player, CapCut, dan semua editor subtitle.</p>
-    </div>
-  </div>
-
-</div><!-- /container -->
-
-<div class="toast" id="toast"></div>
-
-<!-- Tesseract OCR -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <script>
-// ═══════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════
-let videoFile   = null;
-let subtitles   = [];
-let srtContent  = '';
-let cropConfig  = { top: 75, height: 22 };
-let startedAt   = null;
-let isProcessing = false;
 
-// ═══════════════════════════════════════════
-//  FILE INPUT  — kompatibel Android
-// ═══════════════════════════════════════════
-const fileInput  = document.getElementById('fileInput');
-const uploadArea = document.getElementById('uploadArea');
+let cropXPct = 15;
+let cropYPct = 75;
+let cropWPct = 70;
+let cropHPct = 18;
 
-fileInput.addEventListener('change', function() {
-  const f = this.files && this.files[0];
-  if (!f) return;
-  if (!f.type.startsWith('video/')) {
-    showToast('❌ Pilih file video (MP4, MKV, dll)', 'error'); return;
-  }
-  loadVideo(f);
-});
+let videoFile = null;
+let srtText = '';
 
-// Drag-drop (desktop)
-uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
-uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
-uploadArea.addEventListener('drop', e => {
-  e.preventDefault(); uploadArea.classList.remove('dragover');
-  const f = e.dataTransfer.files[0];
-  if (f && f.type.startsWith('video/')) loadVideo(f);
-  else showToast('❌ File harus berupa video', 'error');
-});
+const video = document.getElementById('video');
 
-// Crop buttons
-document.querySelectorAll('.crop-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.crop-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    cropConfig = { top: +btn.dataset.top, height: +btn.dataset.height };
-    updateRegion();
-  });
-});
+document.getElementById('fileInput').addEventListener('change', e=>{
 
-// Sync range display
-document.getElementById('threshold').addEventListener('input', function() {
-  document.getElementById('threshVal').textContent  = this.value;
-  document.getElementById('threshVal2').textContent = this.value;
-});
+  const file = e.target.files[0];
+  if(!file) return;
 
-// ═══════════════════════════════════════════
-//  LOAD VIDEO
-// ═══════════════════════════════════════════
-function loadVideo(file) {
   videoFile = file;
-  const url = URL.createObjectURL(file);
-  const vid = document.getElementById('videoEl');
-  vid.src = url;
-  vid.load();
 
-  document.getElementById('previewFilename').textContent = file.name;
-  document.getElementById('videoPreview').classList.add('visible');
-  document.getElementById('settingsPanel').classList.add('visible');
-  document.getElementById('actionRow').classList.add('visible');
-  uploadArea.style.display = 'none';
+  video.src = URL.createObjectURL(file);
 
-  vid.addEventListener('loadedmetadata', updateRegion, { once: true });
-  showToast('✅ Video dimuat: ' + file.name, 'success');
+  document.getElementById('videoBox').style.display='block';
+
+  video.onloadedmetadata = ()=>{
+
+    renderCrop();
+    initCropDrag();
+
+  };
+
+});
+
+function renderCrop(){
+
+  const stage = document.getElementById('videoStage');
+  const crop = document.getElementById('cropWindow');
+
+  const w = stage.clientWidth;
+  const h = stage.clientHeight;
+
+  crop.style.left = (cropXPct/100*w)+'px';
+  crop.style.top = (cropYPct/100*h)+'px';
+
+  crop.style.width = (cropWPct/100*w)+'px';
+  crop.style.height = (cropHPct/100*h)+'px';
+
+  document.getElementById('cropInfo').innerHTML =
+  `
+  X:${cropXPct.toFixed(1)}%
+  |
+  Y:${cropYPct.toFixed(1)}%
+  |
+  W:${cropWPct.toFixed(1)}%
+  |
+  H:${cropHPct.toFixed(1)}%
+  `;
+
 }
 
-function updateRegion() {
-  const vid  = document.getElementById('videoEl');
-  const wrap = document.getElementById('videoWrapper');
-  const reg  = document.getElementById('subtitleRegion');
-  const h    = wrap.clientHeight || vid.clientHeight;
-  reg.style.top    = (cropConfig.top    / 100 * h) + 'px';
-  reg.style.height = (cropConfig.height / 100 * h) + 'px';
-}
-window.addEventListener('resize', updateRegion);
+function initCropDrag(){
 
-function removeVideo() {
-  const vid = document.getElementById('videoEl');
-  URL.revokeObjectURL(vid.src);
-  vid.src = '';
-  videoFile = null; subtitles = []; srtContent = '';
-  fileInput.value = '';
+  const stage = document.getElementById('videoStage');
 
-  document.getElementById('videoPreview').classList.remove('visible');
-  document.getElementById('settingsPanel').classList.remove('visible');
-  document.getElementById('actionRow').classList.remove('visible');
-  document.getElementById('processPanel').classList.remove('visible');
-  document.getElementById('resultPanel').classList.remove('visible');
-  uploadArea.style.display = '';
-  document.getElementById('extractBtn').disabled = false;
-}
+  const handles = {
+    top: document.getElementById('handleTop'),
+    bottom: document.getElementById('handleBottom'),
+    left: document.getElementById('handleLeft'),
+    right: document.getElementById('handleRight'),
+    move: document.getElementById('moveArea')
+  };
 
-// ═══════════════════════════════════════════
-//  EXTRACTION
-// ═══════════════════════════════════════════
-async function startExtraction() {
-  if (!videoFile || isProcessing) return;
-  isProcessing = true;
-  subtitles = []; srtContent = '';
+  function bind(el,type){
 
-  const vid        = document.getElementById('videoEl');
-  const lang       = document.getElementById('langSelect').value;
-  const sampleEvery = +document.getElementById('sampleRate').value;
-  const threshold  = +document.getElementById('threshold').value;
+    let startX,startY;
+    let sx,sy,sw,sh;
 
-  // UI reset
-  document.getElementById('extractBtn').disabled = true;
-  document.getElementById('processPanel').classList.add('visible');
-  document.getElementById('resultPanel').classList.remove('visible');
-  document.getElementById('logBox').innerHTML = '';
-  document.getElementById('subtitleList').innerHTML = '';
-  document.getElementById('progressBar').style.width = '0%';
-  document.getElementById('processPct').textContent = '0%';
-  document.getElementById('spinner').classList.add('active');
-  startedAt = Date.now();
+    function down(e){
 
-  log('Inisialisasi Tesseract OCR...', 'info');
-  log(`Bahasa: ${lang} | Sample: tiap ${sampleEvery} frame | Kontras: ${threshold}`, 'info');
+      e.preventDefault();
 
-  // Init Tesseract
-  let worker;
-  try {
-    worker = await Tesseract.createWorker(lang, 1, { logger: () => {} });
-    log('OCR engine siap ✓', 'ok');
-  } catch(e) {
-    log('Gagal memuat OCR: ' + e.message, 'err');
-    isProcessing = false;
-    document.getElementById('extractBtn').disabled = false;
-    document.getElementById('spinner').classList.remove('active');
-    return;
-  }
+      startX = e.touches?.[0]?.clientX || e.clientX;
+      startY = e.touches?.[0]?.clientY || e.clientY;
 
-  // Canvas
-  const canvas  = document.createElement('canvas');
-  const ctx     = canvas.getContext('2d');
-  const duration = vid.duration;
-  const FPS     = 30; // fallback FPS
-  const totalFrames = Math.floor(duration * FPS / sampleEvery);
+      sx = cropXPct;
+      sy = cropYPct;
+      sw = cropWPct;
+      sh = cropHPct;
 
-  canvas.width  = vid.videoWidth  || 1280;
-  canvas.height = vid.videoHeight || 720;
+      window.addEventListener('mousemove',move);
+      window.addEventListener('mouseup',up);
 
-  const cropTop = Math.floor((vid.videoHeight || 720) * cropConfig.top    / 100);
-  const cropH   = Math.floor((vid.videoHeight || 720) * cropConfig.height / 100);
+      window.addEventListener('touchmove',move,{passive:false});
+      window.addEventListener('touchend',up);
 
-  log(`Video: ${Math.floor(duration)}s | Frame diproses: ~${totalFrames}`, 'info');
-  log(`Area crop: baris ${cropTop}px → ${cropTop + cropH}px`, 'info');
-
-  let prevText  = '';
-  let subStart  = null;
-  let processed = 0;
-  let curTime   = 0;
-
-  // ── Frame-by-frame loop ──
-  async function nextFrame() {
-    if (curTime > duration + 0.1) {
-      // Flush last subtitle
-      if (prevText && subStart !== null) {
-        subtitles.push({ start: subStart, end: duration, text: prevText });
-        addToList(subtitles.length, subStart, duration, prevText);
-      }
-      await worker.terminate();
-      log(`Selesai! ${subtitles.length} subtitle ditemukan ✓`, 'ok');
-      srtContent = buildSRT(subtitles);
-      showResult(duration, processed);
-      isProcessing = false;
-      document.getElementById('extractBtn').disabled = false;
-      document.getElementById('spinner').classList.remove('active');
-      return;
     }
 
-    vid.currentTime = curTime;
-    await new Promise(resolve => {
-      vid.onseeked = async () => {
-        try {
-          // Draw & crop
-          ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
-          const sub = document.createElement('canvas');
-          sub.width  = canvas.width;
-          sub.height = cropH;
-          const sCtx = sub.getContext('2d');
-          sCtx.drawImage(canvas, 0, cropTop, canvas.width, cropH, 0, 0, canvas.width, cropH);
+    function move(e){
 
-          // Grayscale + threshold
-          const id   = sCtx.getImageData(0, 0, sub.width, sub.height);
-          const px   = id.data;
-          for (let i = 0; i < px.length; i += 4) {
-            const g = (px[i]*0.299 + px[i+1]*0.587 + px[i+2]*0.114);
-            const v = g > threshold ? 255 : 0;
-            px[i] = px[i+1] = px[i+2] = v;
-          }
-          sCtx.putImageData(id, 0, 0);
+      e.preventDefault();
 
-          // OCR
-          const { data: { text } } = await worker.recognize(sub);
-          const clean = text.replace(/[^\S\n]+/g, ' ').trim();
+      const x = e.touches?.[0]?.clientX || e.clientX;
+      const y = e.touches?.[0]?.clientY || e.clientY;
 
-          if (clean && clean !== prevText && clean.length > 2) {
-            if (prevText && subStart !== null) {
-              subtitles.push({ start: subStart, end: curTime, text: prevText });
-              addToList(subtitles.length, subStart, curTime, prevText);
-            }
-            subStart = curTime;
-            prevText = clean;
-          } else if (!clean && prevText && subStart !== null) {
-            subtitles.push({ start: subStart, end: curTime, text: prevText });
-            addToList(subtitles.length, subStart, curTime, prevText);
-            prevText = ''; subStart = null;
-          }
-        } catch(_) { /* skip bad frame */ }
+      const dx = (x-startX)/stage.clientWidth*100;
+      const dy = (y-startY)/stage.clientHeight*100;
 
-        processed++;
-        const pct = Math.min(100, Math.round(processed / totalFrames * 100));
-        updateProgress(pct, processed, totalFrames);
-        curTime += sampleEvery / FPS;
-        resolve();
-      };
+      if(type==='move'){
+        cropXPct = sx+dx;
+        cropYPct = sy+dy;
+      }
+
+      if(type==='top'){
+        cropYPct = sy+dy;
+        cropHPct = sh-dy;
+      }
+
+      if(type==='bottom'){
+        cropHPct = sh+dy;
+      }
+
+      if(type==='left'){
+        cropXPct = sx+dx;
+        cropWPct = sw-dx;
+      }
+
+      if(type==='right'){
+        cropWPct = sw+dx;
+      }
+
+      cropXPct = Math.max(0,Math.min(95,cropXPct));
+      cropYPct = Math.max(0,Math.min(95,cropYPct));
+
+      cropWPct = Math.max(5,Math.min(100-cropXPct,cropWPct));
+      cropHPct = Math.max(5,Math.min(100-cropYPct,cropHPct));
+
+      renderCrop();
+
+    }
+
+    function up(){
+
+      window.removeEventListener('mousemove',move);
+      window.removeEventListener('mouseup',up);
+
+      window.removeEventListener('touchmove',move);
+      window.removeEventListener('touchend',up);
+
+    }
+
+    el.addEventListener('mousedown',down);
+    el.addEventListener('touchstart',down,{passive:false});
+
+  }
+
+  bind(handles.top,'top');
+  bind(handles.bottom,'bottom');
+  bind(handles.left,'left');
+  bind(handles.right,'right');
+  bind(handles.move,'move');
+
+}
+
+function autoBottom(){
+
+  cropXPct = 15;
+  cropYPct = 75;
+  cropWPct = 70;
+  cropHPct = 18;
+
+  renderCrop();
+
+}
+
+function preprocess(ctx,w,h,thr){
+
+  const img = ctx.getImageData(0,0,w,h);
+  const px = img.data;
+
+  for(let i=0;i<px.length;i+=4){
+
+    const r = px[i];
+    const g = px[i+1];
+    const b = px[i+2];
+
+    const bright =
+      0.299*r +
+      0.587*g +
+      0.114*b;
+
+    const edge =
+      Math.abs(r-g)+
+      Math.abs(g-b);
+
+    let val = 0;
+
+    if(bright > thr || (edge < 20 && bright > 120)){
+      val = 255;
+    }
+
+    px[i]=val;
+    px[i+1]=val;
+    px[i+2]=val;
+
+  }
+
+  ctx.putImageData(img,0,0);
+
+}
+
+function normalizeText(t){
+
+  return t
+  .toLowerCase()
+  .replace(/\s+/g,' ')
+  .replace(/[^\w\s]/g,'')
+  .trim();
+
+}
+
+function formatTime(sec){
+
+  const h = Math.floor(sec/3600);
+  const m = Math.floor((sec%3600)/60);
+  const s = Math.floor(sec%60);
+  const ms = Math.floor((sec-Math.floor(sec))*1000);
+
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
+
+}
+
+function log(msg){
+
+  const div = document.createElement('div');
+  div.textContent = msg;
+
+  const logBox = document.getElementById('log');
+
+  logBox.appendChild(div);
+
+  logBox.scrollTop = logBox.scrollHeight;
+
+}
+
+async function startOCR(){
+
+  if(!videoFile) return;
+
+  document.getElementById('progressBox').style.display='block';
+
+  log('Loading OCR engine...');
+
+  const worker = await Tesseract.createWorker(
+    document.getElementById('lang').value
+  );
+
+  await worker.setParameters({
+    tessedit_pageseg_mode: '6'
+  });
+
+  log('OCR Ready');
+
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d',{willReadFrequently:true});
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  const vW = video.videoWidth;
+  const vH = video.videoHeight;
+
+  const cX = Math.floor(cropXPct/100*vW);
+  const cY = Math.floor(cropYPct/100*vH);
+
+  const cW = Math.floor(cropWPct/100*vW);
+  const cH = Math.floor(cropHPct/100*vH);
+
+  const step = parseFloat(document.getElementById('step').value);
+
+  const threshold = parseInt(document.getElementById('threshold').value);
+
+  const duration = video.duration;
+
+  let current = 0;
+
+  let lastText = '';
+  let lastNorm = '';
+
+  let subStart = 0;
+
+  let subs = [];
+
+  while(current < duration){
+
+    video.currentTime = current;
+
+    await new Promise(r=>video.onseeked=r);
+
+    ctx.drawImage(video,0,0);
+
+    const crop = document.createElement('canvas');
+    crop.width = cW;
+    crop.height = cH;
+
+    const cc = crop.getContext('2d',{willReadFrequently:true});
+
+    cc.filter='grayscale(1) contrast(2)';
+
+    cc.drawImage(
+      canvas,
+      cX,
+      cY,
+      cW,
+      cH,
+      0,
+      0,
+      cW,
+      cH
+    );
+
+    preprocess(cc,cW,cH,threshold);
+
+    const big = document.createElement('canvas');
+
+    big.width = cW*2;
+    big.height = cH*2;
+
+    big.getContext('2d').drawImage(
+      crop,
+      0,
+      0,
+      big.width,
+      big.height
+    );
+
+    const result = await worker.recognize(big);
+
+    const text = result.data.text.trim();
+
+    const norm = normalizeText(text);
+
+    log(`[${current.toFixed(1)}s] ${text}`);
+
+    if(norm && norm !== lastNorm){
+
+      if(lastText){
+
+        subs.push({
+          start:subStart,
+          end:current,
+          text:lastText
+        });
+
+      }
+
+      lastText = text;
+      lastNorm = norm;
+      subStart = current;
+
+    }
+
+    if(!norm && lastText){
+
+      subs.push({
+        start:subStart,
+        end:current,
+        text:lastText
+      });
+
+      lastText = '';
+      lastNorm = '';
+
+    }
+
+    current += step;
+
+    const pct = Math.floor(current/duration*100);
+
+    document.getElementById('fill').style.width=pct+'%';
+
+    document.getElementById('status').textContent =
+    pct+'%';
+
+    await new Promise(r=>setTimeout(r,30));
+
+  }
+
+  if(lastText){
+
+    subs.push({
+      start:subStart,
+      end:duration,
+      text:lastText
     });
 
-    setTimeout(nextFrame, 0); // yield UI thread
   }
 
-  nextFrame();
+  await worker.terminate();
+
+  srtText = '';
+
+  subs.forEach((s,i)=>{
+
+    srtText +=
+`${i+1}
+${formatTime(s.start)} --> ${formatTime(s.end)}
+${s.text}
+
+`;
+
+  });
+
+  document.getElementById('srt').value = srtText;
+
+  document.getElementById('result').style.display='block';
+
+  log('DONE');
+
 }
 
-// ═══════════════════════════════════════════
-//  HELPERS
-// ═══════════════════════════════════════════
-function pad(n, len=2) { return String(n).padStart(len, '0'); }
-function toSRT(sec) {
-  const h  = Math.floor(sec / 3600);
-  const m  = Math.floor((sec % 3600) / 60);
-  const s  = Math.floor(sec % 60);
-  const ms = Math.floor((sec - Math.floor(sec)) * 1000);
-  return `${pad(h)}:${pad(m)}:${pad(s)},${pad(ms,3)}`;
-}
-function buildSRT(subs) {
-  return subs.map((s,i) => `${i+1}\n${toSRT(s.start)} --> ${toSRT(s.end)}\n${s.text}\n`).join('\n');
-}
-function updateProgress(pct, done, total) {
-  document.getElementById('progressBar').style.width  = pct + '%';
-  document.getElementById('processPct').textContent   = pct + '%';
-  document.getElementById('progressLabel').textContent = `Frame ${done} / ${total}`;
-  const elapsed = (Date.now() - startedAt) / 1000;
-  if (pct > 0) {
-    const left = elapsed / pct * (100 - pct);
-    document.getElementById('progressEta').textContent = `ETA ${pad(Math.floor(left/60))}:${pad(Math.floor(left%60))}`;
-  }
-}
-function log(msg, type='') {
-  const box  = document.getElementById('logBox');
-  const now  = new Date().toLocaleTimeString('id-ID',{hour12:false});
-  const line = document.createElement('div');
-  line.className = 'log-line';
-  line.innerHTML = `<span class="log-time">${now}</span><span class="log-msg ${type}">${msg}</span>`;
-  box.appendChild(line);
-  box.scrollTop = box.scrollHeight;
-}
-function addToList(num, start, end, text) {
-  const list = document.getElementById('subtitleList');
-  const item = document.createElement('div');
-  item.className = 'sub-item';
-  item.innerHTML = `<div class="sub-num">${num}</div><div class="sub-text">${escHtml(text)}</div><div class="sub-time">${toSRT(start)}</div>`;
-  list.appendChild(item);
-  list.scrollTop = list.scrollHeight;
-}
-function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function showResult(dur, frames) {
-  document.getElementById('statLines').textContent    = subtitles.length;
-  document.getElementById('statFrames').textContent   = frames;
-  document.getElementById('statDuration').textContent = Math.floor(dur) + 's';
-  const preview = srtContent.split('\n').slice(0, 36).join('\n');
-  document.getElementById('srtPreview').textContent   = preview + (srtContent.split('\n').length > 36 ? '\n...' : '');
-  document.getElementById('resultPanel').classList.add('visible');
-  document.getElementById('processPanel').classList.remove('visible');
-  showToast(`✅ ${subtitles.length} subtitle berhasil!`, 'success');
-}
-function downloadSRT() {
-  if (!srtContent) return;
-  const name = (videoFile?.name || 'subtitle').replace(/\.[^.]+$/,'') + '.srt';
-  const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
-  const a    = document.createElement('a');
-  a.href     = URL.createObjectURL(blob);
-  a.download = name;
-  document.body.appendChild(a);
+function downloadSRT(){
+
+  const blob = new Blob(
+    [srtText],
+    {type:'text/plain'}
+  );
+
+  const a = document.createElement('a');
+
+  a.href = URL.createObjectURL(blob);
+
+  a.download = 'subtitle.srt';
+
   a.click();
-  document.body.removeChild(a);
-  showToast('⬇ Mengunduh ' + name, 'success');
+
 }
-function copySRT() {
-  if (!srtContent) return;
-  navigator.clipboard.writeText(srtContent)
-    .then(() => showToast('📋 Teks SRT disalin!', 'success'))
-    .catch(()  => showToast('❌ Gagal menyalin', 'error'));
-}
-function resetAll() { removeVideo(); }
-function showToast(msg, type='') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className   = 'toast show ' + type;
-  setTimeout(() => { t.className = 'toast'; }, 3000);
-}
+
 </script>
+
 </body>
-</html>
+  </html>
