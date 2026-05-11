@@ -2,14 +2,12 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-
-<title>Subtitle OCR Studio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movie Subtitle OCR Studio</title>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
-
 *{
   margin:0;
   padding:0;
@@ -17,9 +15,9 @@
 }
 
 body{
-  background:#0b0f14;
+  background:#070b12;
   color:white;
-  font-family:Arial;
+  font-family:Arial,Helvetica,sans-serif;
   padding:20px;
 }
 
@@ -30,19 +28,24 @@ body{
 
 h1{
   margin-bottom:20px;
+  font-size:40px;
 }
 
-.upload{
+.card{
+  background:#111923;
+  border:1px solid #233244;
+  border-radius:18px;
+  padding:20px;
   margin-bottom:20px;
 }
 
 input[type=file]{
   width:100%;
-  padding:14px;
-  border-radius:10px;
-  background:#111923;
+  padding:16px;
+  background:#0b1118;
+  border:1px solid #233244;
   color:white;
-  border:1px solid #2b3949;
+  border-radius:12px;
 }
 
 .video-wrap{
@@ -51,10 +54,9 @@ input[type=file]{
 
 .video-stage{
   position:relative;
-  width:100%;
-  background:black;
   overflow:hidden;
-  border-radius:12px;
+  border-radius:16px;
+  background:black;
 }
 
 video{
@@ -65,8 +67,19 @@ video{
 #cropBox{
   position:absolute;
   border:3px solid #00d2ff;
-  background:rgba(0,210,255,.08);
+  background:rgba(0,210,255,.12);
   z-index:10;
+}
+
+#cropLabel{
+  position:absolute;
+  top:6px;
+  left:6px;
+  background:rgba(0,0,0,.8);
+  color:#00d2ff;
+  padding:5px 8px;
+  font-size:12px;
+  border-radius:6px;
 }
 
 #moveArea{
@@ -85,7 +98,7 @@ video{
 .handle.bottom{
   left:0;
   right:0;
-  height:18px;
+  height:22px;
   cursor:ns-resize;
 }
 
@@ -93,59 +106,34 @@ video{
 .handle.right{
   top:0;
   bottom:0;
-  width:18px;
+  width:22px;
   cursor:ew-resize;
 }
 
-.handle.top{
-  top:-9px;
-}
+.handle.top{top:-11px;}
+.handle.bottom{bottom:-11px;}
+.handle.left{left:-11px;}
+.handle.right{right:-11px;}
 
-.handle.bottom{
-  bottom:-9px;
-}
-
-.handle.left{
-  left:-9px;
-}
-
-.handle.right{
-  right:-9px;
-}
-
-#darkTop,
-#darkBottom,
-#darkLeft,
-#darkRight{
+.dark{
   position:absolute;
-  background:rgba(0,0,0,.65);
+  background:rgba(0,0,0,.72);
   pointer-events:none;
 }
 
-#cropLabel{
-  position:absolute;
-  top:6px;
-  left:8px;
-  background:rgba(0,0,0,.7);
-  color:#00d2ff;
-  font-size:12px;
-  padding:4px 8px;
-  border-radius:5px;
-}
-
 .controls{
-  margin-top:15px;
   display:flex;
-  gap:10px;
   flex-wrap:wrap;
+  gap:10px;
+  margin-top:15px;
 }
 
 button{
   background:#00d2ff;
   color:black;
   border:none;
-  padding:12px 18px;
-  border-radius:8px;
+  padding:14px 18px;
+  border-radius:12px;
   font-weight:bold;
   cursor:pointer;
 }
@@ -154,33 +142,39 @@ button:hover{
   opacity:.9;
 }
 
-.preview{
-  margin-top:25px;
-  background:#111923;
-  border-radius:12px;
-  padding:20px;
-}
-
-.preview h2{
-  margin-bottom:15px;
-}
-
-#ocrText{
-  white-space:pre-wrap;
+.info{
+  margin-top:12px;
+  color:#8ea5bb;
   line-height:1.8;
-  font-size:18px;
-  color:#00ffae;
+}
+
+#ocrPreview{
+  min-height:120px;
+  font-size:22px;
+  line-height:1.8;
+  color:#00ff9d;
+  white-space:pre-wrap;
 }
 
 #status{
-  margin-top:10px;
-  color:#8da2b8;
-  font-size:14px;
+  margin-top:15px;
+  color:#8ea5bb;
 }
 
-.crop-info{
-  margin-top:10px;
-  color:#8da2b8;
+.setting-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:14px;
+}
+
+select,
+input[type=range]{
+  width:100%;
+  margin-top:8px;
+}
+
+label{
+  color:#9db3c7;
 }
 
 canvas{
@@ -193,71 +187,92 @@ canvas{
 
 <div class="container">
 
-<h1>Subtitle OCR Studio</h1>
+<h1>Movie Subtitle OCR Studio</h1>
 
-<div class="upload">
+<div class="card">
   <input type="file" id="fileInput" accept="video/*">
 </div>
 
 <div class="video-wrap" id="videoWrap">
 
-  <div class="video-stage" id="videoStage">
+  <div class="card">
 
-    <video id="video" controls></video>
+    <div class="video-stage" id="videoStage">
 
-    <!-- DARK AREAS -->
-    <div id="darkTop"></div>
-    <div id="darkBottom"></div>
-    <div id="darkLeft"></div>
-    <div id="darkRight"></div>
+      <video id="video" controls playsinline></video>
 
-    <!-- CROP -->
-    <div id="cropBox">
+      <div class="dark" id="darkTop"></div>
+      <div class="dark" id="darkBottom"></div>
+      <div class="dark" id="darkLeft"></div>
+      <div class="dark" id="darkRight"></div>
 
-      <div id="cropLabel">
-        SUBTITLE AREA
+      <div id="cropBox">
+
+        <div id="cropLabel">
+          SUBTITLE AREA
+        </div>
+
+        <div class="handle top" id="topHandle"></div>
+        <div class="handle bottom" id="bottomHandle"></div>
+        <div class="handle left" id="leftHandle"></div>
+        <div class="handle right" id="rightHandle"></div>
+
+        <div id="moveArea"></div>
+
       </div>
 
-      <div class="handle top" id="topHandle"></div>
-      <div class="handle bottom" id="bottomHandle"></div>
-      <div class="handle left" id="leftHandle"></div>
-      <div class="handle right" id="rightHandle"></div>
+    </div>
 
-      <div id="moveArea"></div>
+    <div class="info" id="cropInfo"></div>
+
+    <div class="controls">
+      <button onclick="presetBottom()">Bottom</button>
+      <button onclick="presetMiddle()">Middle</button>
+      <button onclick="presetTop()">Top</button>
+      <button onclick="testOCR()">TEST OCR</button>
+    </div>
+
+  </div>
+
+  <div class="card">
+
+    <div class="setting-grid">
+
+      <div>
+        <label>OCR Mode</label>
+        <select id="ocrMode">
+          <option value="movie">Movie Subtitle</option>
+          <option value="anime">Anime Subtitle</option>
+        </select>
+      </div>
+
+      <div>
+        <label>OCR Threshold</label>
+        <input type="range" id="threshold" min="120" max="240" value="200">
+      </div>
+
+      <div>
+        <label>OCR Language</label>
+        <select id="ocrLang">
+          <option value="ind+eng">Indonesia + English</option>
+          <option value="ind">Indonesia</option>
+          <option value="eng">English</option>
+        </select>
+      </div>
 
     </div>
 
   </div>
 
-  <div class="crop-info" id="cropInfo"></div>
-
-  <div class="controls">
-
-    <button onclick="presetBottom()">
-      Bottom
-    </button>
-
-    <button onclick="presetMiddle()">
-      Middle
-    </button>
-
-    <button onclick="presetTop()">
-      Top
-    </button>
-
-    <button onclick="testOCR()">
-      TEST OCR
-    </button>
-
-  </div>
-
 </div>
 
-<div class="preview">
+<div class="card">
 
-  <h2>OCR PREVIEW</h2>
+  <h2 style="margin-bottom:20px">
+    OCR PREVIEW
+  </h2>
 
-  <div id="ocrText">
+  <div id="ocrPreview">
     Belum ada OCR...
   </div>
 
@@ -270,11 +285,15 @@ canvas{
 <script>
 
 let cropXPct = 15;
-let cropYPct = 75;
+let cropYPct = 76;
 let cropWPct = 70;
-let cropHPct = 16;
+let cropHPct = 14;
 
 const video = document.getElementById('video');
+
+// =========================
+// FILE LOAD
+// =========================
 
 document
 .getElementById('fileInput')
@@ -290,14 +309,18 @@ document
   .getElementById('videoWrap')
   .style.display='block';
 
-  video.onloadedmetadata=()=>{
+  video.onloadedmetadata = ()=>{
 
     renderCrop();
-    initDrag();
+    initCropDrag();
 
   };
 
 });
+
+// =========================
+// RENDER CROP
+// =========================
 
 function renderCrop(){
 
@@ -310,25 +333,17 @@ function renderCrop(){
   const w = stage.clientWidth;
   const h = stage.clientHeight;
 
-  const left =
-  cropXPct/100*w;
+  const left = cropXPct/100*w;
+  const top = cropYPct/100*h;
+  const width = cropWPct/100*w;
+  const height = cropHPct/100*h;
 
-  const top =
-  cropYPct/100*h;
+  crop.style.left = left+'px';
+  crop.style.top = top+'px';
+  crop.style.width = width+'px';
+  crop.style.height = height+'px';
 
-  const width =
-  cropWPct/100*w;
-
-  const height =
-  cropHPct/100*h;
-
-  crop.style.left=left+'px';
-  crop.style.top=top+'px';
-
-  crop.style.width=width+'px';
-  crop.style.height=height+'px';
-
-  // DARK AREAS
+  // DARK OVERLAY
 
   const darkTop =
   document.getElementById('darkTop');
@@ -344,8 +359,7 @@ function renderCrop(){
   darkBottom.style.left='0px';
   darkBottom.style.top=(top+height)+'px';
   darkBottom.style.width='100%';
-  darkBottom.style.height=
-  (h-(top+height))+'px';
+  darkBottom.style.height=(h-(top+height))+'px';
 
   const darkLeft =
   document.getElementById('darkLeft');
@@ -360,15 +374,12 @@ function renderCrop(){
 
   darkRight.style.left=(left+width)+'px';
   darkRight.style.top=top+'px';
-
-  darkRight.style.width=
-  (w-(left+width))+'px';
-
+  darkRight.style.width=(w-(left+width))+'px';
   darkRight.style.height=height+'px';
 
   document
   .getElementById('cropInfo')
-  .innerHTML=
+  .innerHTML =
   `
   X:${cropXPct.toFixed(1)}%
   |
@@ -381,7 +392,11 @@ function renderCrop(){
 
 }
 
-function initDrag(){
+// =========================
+// CROP DRAG
+// =========================
+
+function initCropDrag(){
 
   const stage =
   document.getElementById('videoStage');
@@ -427,15 +442,8 @@ function initDrag(){
       sw=cropWPct;
       sh=cropHPct;
 
-      window.addEventListener(
-        'mousemove',
-        move
-      );
-
-      window.addEventListener(
-        'mouseup',
-        up
-      );
+      window.addEventListener('mousemove',move);
+      window.addEventListener('mouseup',up);
 
       window.addEventListener(
         'touchmove',
@@ -443,10 +451,7 @@ function initDrag(){
         {passive:false}
       );
 
-      window.addEventListener(
-        'touchend',
-        up
-      );
+      window.addEventListener('touchend',up);
 
     }
 
@@ -463,12 +468,10 @@ function initDrag(){
       e.clientY;
 
       const dx =
-      (x-startX)/
-      stage.clientWidth*100;
+      (x-startX)/stage.clientWidth*100;
 
       const dy =
-      (y-startY)/
-      stage.clientHeight*100;
+      (y-startY)/stage.clientHeight*100;
 
       if(type==='move'){
 
@@ -503,19 +506,19 @@ function initDrag(){
 
       }
 
-      cropXPct=
+      cropXPct =
       Math.max(
         0,
         Math.min(95,cropXPct)
       );
 
-      cropYPct=
+      cropYPct =
       Math.max(
         0,
         Math.min(95,cropYPct)
       );
 
-      cropWPct=
+      cropWPct =
       Math.max(
         5,
         Math.min(
@@ -524,7 +527,7 @@ function initDrag(){
         )
       );
 
-      cropHPct=
+      cropHPct =
       Math.max(
         5,
         Math.min(
@@ -539,32 +542,14 @@ function initDrag(){
 
     function up(){
 
-      window.removeEventListener(
-        'mousemove',
-        move
-      );
-
-      window.removeEventListener(
-        'mouseup',
-        up
-      );
-
-      window.removeEventListener(
-        'touchmove',
-        move
-      );
-
-      window.removeEventListener(
-        'touchend',
-        up
-      );
+      window.removeEventListener('mousemove',move);
+      window.removeEventListener('mouseup',up);
+      window.removeEventListener('touchmove',move);
+      window.removeEventListener('touchend',up);
 
     }
 
-    el.addEventListener(
-      'mousedown',
-      down
-    );
+    el.addEventListener('mousedown',down);
 
     el.addEventListener(
       'touchstart',
@@ -582,6 +567,10 @@ function initDrag(){
 
 }
 
+// =========================
+// PRESETS
+// =========================
+
 function presetBottom(){
 
   cropXPct=15;
@@ -598,7 +587,7 @@ function presetMiddle(){
   cropXPct=15;
   cropYPct=42;
   cropWPct=70;
-  cropHPct=16;
+  cropHPct=14;
 
   renderCrop();
 
@@ -615,6 +604,28 @@ function presetTop(){
 
 }
 
+// =========================
+// CLEAN OCR TEXT
+// =========================
+
+function cleanText(text){
+
+  return text
+
+  .replace(/[|¦¥¢©®™]/g,'')
+
+  .replace(/[^ -~\n]/g,'')
+
+  .replace(/\s+/g,' ')
+
+  .trim();
+
+}
+
+// =========================
+// TEST OCR
+// =========================
+
 async function testOCR(){
 
   if(!video.videoWidth) return;
@@ -622,16 +633,18 @@ async function testOCR(){
   const status =
   document.getElementById('status');
 
-  const ocrText =
-  document.getElementById('ocrText');
+  const preview =
+  document.getElementById('ocrPreview');
 
-  status.innerHTML='Preparing OCR...';
+  preview.innerHTML='Running OCR...';
+
+  status.innerHTML='Preparing frame...';
 
   const canvas =
   document.createElement('canvas');
 
-  canvas.width=video.videoWidth;
-  canvas.height=video.videoHeight;
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
 
   const ctx =
   canvas.getContext(
@@ -659,8 +672,8 @@ async function testOCR(){
   const crop =
   document.createElement('canvas');
 
-  crop.width=cW;
-  crop.height=cH;
+  crop.width = cW;
+  crop.height = cH;
 
   const cc =
   crop.getContext(
@@ -668,7 +681,15 @@ async function testOCR(){
     {willReadFrequently:true}
   );
 
-  cc.filter='grayscale(1) contrast(2)';
+  // BLACK BACKGROUND
+
+  cc.fillStyle='black';
+  cc.fillRect(0,0,cW,cH);
+
+  // FILTER
+
+  cc.filter =
+  'grayscale(1) contrast(4) brightness(1.4)';
 
   cc.drawImage(
     canvas,
@@ -682,10 +703,17 @@ async function testOCR(){
     cH
   );
 
+  // THRESHOLD
+
   const img =
   cc.getImageData(0,0,cW,cH);
 
   const px = img.data;
+
+  const threshold =
+  parseInt(
+    document.getElementById('threshold').value
+  );
 
   for(let i=0;i<px.length;i+=4){
 
@@ -693,15 +721,17 @@ async function testOCR(){
     const g = px[i+1];
     const b = px[i+2];
 
-    const bright =
+    const brightness =
       0.299*r+
       0.587*g+
       0.114*b;
 
-    let val=0;
+    let val = 0;
 
-    if(bright>180){
-      val=255;
+    if(brightness > threshold){
+      val = 255;
+    }else{
+      val = 0;
     }
 
     px[i]=val;
@@ -712,11 +742,13 @@ async function testOCR(){
 
   cc.putImageData(img,0,0);
 
+  // UPSCALE
+
   const big =
   document.createElement('canvas');
 
-  big.width=cW*3;
-  big.height=cH*3;
+  big.width = cW*5;
+  big.height = cH*5;
 
   big
   .getContext('2d')
@@ -728,14 +760,16 @@ async function testOCR(){
     big.height
   );
 
-  status.innerHTML='Running OCR...';
+  status.innerHTML='Loading OCR engine...';
 
   const worker =
-  await Tesseract.createWorker('ind+eng');
+  await Tesseract.createWorker(
+    document.getElementById('ocrLang').value
+  );
 
   await worker.setParameters({
 
-    tessedit_pageseg_mode:'6',
+    tessedit_pageseg_mode:'7',
 
     preserve_interword_spaces:'1',
 
@@ -744,15 +778,25 @@ async function testOCR(){
 
   });
 
+  status.innerHTML='Running OCR...';
+
   const result =
   await worker.recognize(big);
 
   await worker.terminate();
 
-  ocrText.innerHTML=
-  result.data.text || '(tidak ada teks)';
+  let text =
+  cleanText(
+    result.data.text
+  );
 
-  status.innerHTML=
+  if(!text){
+    text='(tidak ada teks terbaca)';
+  }
+
+  preview.innerHTML = text;
+
+  status.innerHTML =
   `
   OCR Confidence:
   ${Math.round(result.data.confidence)}%
